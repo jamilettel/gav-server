@@ -20,7 +20,7 @@ import json
 
 import numpy
 
-from ga.ga_simple import ga_simple
+from ga_server.deap_server import start_deap_server
 
 from deap import algorithms
 from deap import base
@@ -29,7 +29,7 @@ from deap import tools
 
 # gr*.json contains the distance map in list of list style in JSON format
 # Optimal solutions are : gr17 = 2085, gr24 = 1272, gr120 = 6942
-with open("tmp.json", "r") as tsp_data:
+with open("tsp.json", "r") as tsp_data:
     tsp = json.load(tsp_data)
 
 distance_map = tsp["DistanceMatrix"]
@@ -68,7 +68,7 @@ def main():
     stats.register("std", numpy.std)
     stats.register("max,min,mean", lambda x: [numpy.max(x), numpy.min(x), numpy.mean(x)])
 
-    ga_simple(pop, toolbox, 0.7, 0.2, 1, stats=stats, hof=hof)
+    start_deap_server(pop, toolbox, 0.7, 0.2, 15, stats=stats, hof=hof)
     # algorithms.eaSimple(pop, toolbox, 0.7, 0.2, 40, stats=stats,
     #                     halloffame=hof)
 

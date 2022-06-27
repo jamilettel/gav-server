@@ -1,8 +1,10 @@
+
 from deap import base
 from deap import tools
 from deap import algorithms
 
-def ga_simple(
+
+def start_deap_server(
         pop,
         toolbox: base.Toolbox,
         cxpb: float,
@@ -24,5 +26,4 @@ def ga_simple(
         if stats is not None:
             record = stats.compile(pop)
             print(record)
-
-
+    print(hof.items[0].__getattribute__())
