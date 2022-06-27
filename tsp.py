@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 #    This file is part of DEAP.
 #
 #    DEAP is free software: you can redistribute it and/or modify
@@ -20,7 +21,7 @@ import json
 
 import numpy
 
-from ga_server.deap_server import start_deap_server
+from ga_server.deap_server import run_deap_server
 
 from deap import algorithms
 from deap import base
@@ -68,12 +69,13 @@ def main():
     stats.register("std", numpy.std)
     stats.register("max,min,mean", lambda x: [numpy.max(x), numpy.min(x), numpy.mean(x)])
 
-    start_deap_server(pop, toolbox, 0.7, 0.2, 15, stats=stats, hof=hof)
+    run_deap_server(pop, toolbox, 0.7, 0.2, stats=stats)
     # algorithms.eaSimple(pop, toolbox, 0.7, 0.2, 40, stats=stats,
     #                     halloffame=hof)
 
-    print(f'Best distance found: {hof.items[0].fitness.values[0]}')
-    print(f'Optimal distance {tsp["OptDistance"]}')
+    if len(hof.items) != 0:
+        print(f'Best distance found: {hof.items[0].fitness.values[0]}')
+        print(f'Optimal distance {tsp["OptDistance"]}')
     return pop, stats, hof
 
 if __name__ == "__main__":

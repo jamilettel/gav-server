@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-from ga_server.gas import run_ga_server
+from ga_server.gas import GAServer
 
 
 if __name__ == "__main__":
-    run_ga_server()
+    GAServer().run()
