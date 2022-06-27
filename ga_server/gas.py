@@ -18,35 +18,36 @@ class GAServer:
         self, 
         host: str = "localhost", 
         port: int = 8080, 
-        client_data_provider: Callable[[], Any] = None,
+        ga_data_provider: Callable[[], Any] = None,
         commands: dict[str, Callable[[GAClient, dict], str]] = {}
     ):
         self.host = host
         self.port = port
-        self.client_data_provider = client_data_provider
+        self.ga_data_provider = ga_data_provider
         self.commands = commands
 
     async def message_handler(self, message, websocket: client.WebSocketClientProtocol):
-        client = self.connections[websocket.id]
+        ga_client = self.connections[websocket.id]
+        
         try:
             data = self.json_dec.decode(message)
             if "command" in data:
                 if data["command"] in self.commands:
-                    response = self.commands[data["command"]](client, data)
+                    response = self.commands[data["command"]](ga_client, data)
                     if response is not None:
                         await websocket.send(response)
                 else:
-                    print("CommandNotFound:", f'"{message}" from', client)
+                    print("CommandNotFound:", f'"{message}" from', ga_client)
             else:
-                print("InvalidCommand:", f'"{message}" from', client)
+                print("InvalidCommand:", f'"{message}" from', ga_client)
         except json.JSONDecodeError:
-            print("InvalidJSON:", f'"{message}" from', client)
+            print("InvalidJSON:", f'"{message}" from', ga_client)
 
 
     async def ws_handler(self, websocket: client.WebSocketClientProtocol):
         self.connections[websocket.id] = GAClient(
             websocket,
-            ga_data=self.client_data_provider() if self.client_data_provider != None else None
+            ga_data=self.ga_data_provider() if self.ga_data_provider != None else None
         )
         print(f"Connected: {websocket.id}")
         try:

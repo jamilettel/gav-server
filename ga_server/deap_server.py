@@ -52,8 +52,14 @@ class GADataDeap:
             "generation": self.generation,
             "all_stats": self.records,
             "settings": {
-                "cxpb": self.cxpb,
-                "mutpb": self.mutpb,
+                "cxpb": {
+                    "type": "float",
+                    "value": "self.cxpb"
+                },
+                "mutpb": {
+                    "type": "float",
+                    "value": self.mutpb
+                },
             }
         }
 
@@ -87,23 +93,4 @@ def run_deap_server(
         }
     )
 
-
-
     server.run()
-
-
-    # for _ in range(40):
-    #     offspring = toolbox.select(pop, len(pop))
-    #     offspring = algorithms.varAnd(offspring, toolbox, cxpb, mutpb)
-    #     fitness = toolbox.map(toolbox.evaluate, offspring)
-    #     for fit, ind in zip(fitness, offspring):
-    #         ind.fitness.values = fit
-
-    #     if hof is not None:
-    #         hof.update(offspring)
-
-    #     pop[:] = offspring
-    #     if stats is not None:
-    #         record = stats.compile(pop)
-    #         print(record)
-    # print(hof.items[0].__getattribute__())
