@@ -53,12 +53,14 @@ class GADataDeap:
             "all_stats": self.records,
             "settings": {
                 "cxpb": {
-                    "type": "float",
-                    "value": "self.cxpb"
+                    "type": "number",
+                    "value": self.cxpb,
+                    "range": [0.0, 1.0]
                 },
                 "mutpb": {
-                    "type": "float",
-                    "value": self.mutpb
+                    "type": "number",
+                    "value": self.mutpb,
+                    "range": [0.0, 1.0]
                 },
             }
         }
@@ -74,22 +76,22 @@ def run_deap_server(
 
     json_enc = json.encoder.JSONEncoder()
 
-    def info(client: GAClient[GADataDeap], _) -> str:
-        return json_enc.encode(client.ga_data.info())
+    def info(ga_data: GADataDeap, _) -> str:
+        return (json_enc.encode(ga_data.info()), False)
 
-    def run_one_gen(client: GAClient[GADataDeap], _) -> str:
-        gen_stats = client.ga_data.run_one_gen()
-        return json_enc.encode({
-            'generation': client.ga_data.generation,
+    def run_one_gen(ga_data: GADataDeap, _) -> str:
+        gen_stats = ga_data.run_one_gen()
+        return (json_enc.encode({
+            'generation': ga_data.generation,
             'gen_stats': gen_stats
-        })
+        }), True)
 
     default_data = GADataDeap(pop, toolbox, cxpb, mutpb, stats)
-    server = GAServer(
+    server: GAServer[GADataDeap] = GAServer(
         host, port, lambda: deepcopy(default_data),
         commands={
             "info": info,
-            "run_one_gen": run_one_gen,
+            "run-one-gen": run_one_gen,
         }
     )
 

@@ -1,17 +1,12 @@
 from websockets import client
-from typing import TypeVar, Generic
 
-
-T = TypeVar('T')
-
-class GAClient(Generic[T]):
+class GAClient():
     ws: client.WebSocketClientProtocol
     messages: int = 0
-    ga_data: T
+    session_name: str | None = None
 
-    def __init__(self, ws: client.WebSocketClientProtocol, ga_data: T = None):
+    def __init__(self, ws: client.WebSocketClientProtocol):
         self.ws = ws
-        self.ga_data = ga_data
         pass
 
     def __str__(self):
