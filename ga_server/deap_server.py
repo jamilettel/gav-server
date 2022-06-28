@@ -1,7 +1,7 @@
 
 from copy import deepcopy
 import json
-from typing import Any
+from typing import Any, Tuple
 from deap import base
 from deap import tools
 from deap import algorithms
@@ -30,7 +30,7 @@ class GADataDeap:
         self.stats = stats
         self.hof = hof
 
-    def run_one_gen(self):
+    def run_one_gen(self) -> dict:
         offspring = self.toolbox.select(self.pop, len(self.pop))
         offspring = algorithms.varAnd(offspring, self.toolbox, self.cxpb, self.mutpb)
         fitness = self.toolbox.map(self.toolbox.evaluate, offspring)
@@ -51,19 +51,38 @@ class GADataDeap:
         return {
             "generation": self.generation,
             "all_stats": self.records,
-            "settings": {
-                "cxpb": {
-                    "type": "number",
-                    "value": self.cxpb,
-                    "range": [0.0, 1.0]
-                },
-                "mutpb": {
-                    "type": "number",
-                    "value": self.mutpb,
-                    "range": [0.0, 1.0]
-                },
-            }
+            "settings": self.settings()
         }
+
+    def settings(self) -> dict:
+        return {
+            "cxpb": {
+                "type": "number",
+                "value": self.cxpb,
+                "range": [0.0, 1.0]
+            },
+            "mutpb": {
+                "type": "number",
+                "value": self.mutpb,
+                "range": [0.0, 1.0]
+            },
+        }
+
+    def set_settings(self, command: dict) -> bool:
+        if "setting_name" not in command or "setting_value" not in command:
+            return False
+        setting_name = command["setting_name"]
+        setting_value = command["setting_value"]
+        match setting_name:
+            case "cxpb":
+                if type(setting_value) is float and setting_value >= 0.0 and setting_value <= 1.0:
+                    self.cxpb = setting_value
+                    return True
+            case "mutpb":
+                if type(setting_value) is float and setting_value >= 0.0 and setting_value <= 1.0:
+                    self.mutpb = setting_value
+                    return True
+        return False
 
 def run_deap_server(
     pop,
@@ -76,13 +95,13 @@ def run_deap_server(
 ):
     json_enc = json.encoder.JSONEncoder()
 
-    def info(ga_data: GADataDeap, _) -> str:
+    def info(ga_data: GADataDeap, _) -> Tuple[str, bool]:
         return (json_enc.encode({
             "info": "all",
             "data": ga_data.info()
         }), False)
 
-    def run_one_gen(ga_data: GADataDeap, _) -> str:
+    def run_one_gen(ga_data: GADataDeap, _) -> Tuple[str, bool]:
         gen_stats = ga_data.run_one_gen()
         return (json_enc.encode({
             "info": "one-gen",
@@ -92,12 +111,26 @@ def run_deap_server(
             }
         }), True)
 
+    def settings(ga_data: GADataDeap, _) -> Tuple[str, bool]:
+        return (json_enc.encode({
+            "info": "settings",
+            "settings": ga_data.settings()
+        }), False)
+
+    def set_setting(ga_data: GADataDeap, command: dict) -> Tuple[str, bool] | None:
+        update = ga_data.set_settings(command)
+        if update:
+            return (settings(ga_data, {})[0], True)
+        return None
+
     default_data = GADataDeap(pop, toolbox, cxpb, mutpb, stats)
     server: GAServer[GADataDeap] = GAServer(
         host, port, lambda: deepcopy(default_data),
         commands = {
             "info": info,
             "run-one-gen": run_one_gen,
+            "settings": settings,
+            "set-setting": set_setting,
         },
         command_protocol = "generic"
     )
