@@ -36,27 +36,47 @@ class GAServer(Generic[T]):
             if client.session_name == session:
                 await client.ws.send(message)
 
-    def session_join_or_create(self, client: GAClient, data: dict):
+    async def session_join_or_create(self, ga_client: GAClient, data: dict):
         if "name" in data:
             name = data["name"]
             if name == "":
                 return
             elif name not in self.sessions:
                 self.sessions[name] = self.ga_data_provider()
-            client.session_name = name
+            ga_client.session_name = name
+            await self.session_info(ga_client)
     
-    async def session_list(self, client: GAClient):
-        await client.ws.send(self.json_enc.encode({
+    async def session_list(self, ga_client: GAClient):
+        await ga_client.ws.send(self.json_enc.encode({
+            "info": "session_list",
             "sessions": [x for x in self.sessions]
         }))
+    
+    async def session_info(self, ga_client: GAClient):
+        await ga_client.ws.send(self.json_enc.encode({
+            "info": "session",
+            "session": ga_client.session_name,
+        }))
+
+    async def session_delete(self, ga_client: GAClient):
+        name = ga_client.session_name
+        if name != None:
+            for _, c in self.connections.items():
+                if c.session_name == name:
+                    c.session_name = None
+                    await self.session_info(c)
 
     async def handle_builtin(self, ga_client: GAClient, data: dict):
         if "session" in data:
             match data["session"]:
                 case "join-or-create":
-                    self.session_join_or_create(ga_client, data)
+                    await self.session_join_or_create(ga_client, data)
+                case "delete":
+                    await self.session_delete(ga_client)
                 case "list":
                     await self.session_list(ga_client)
+                case "info":
+                    await self.session_info(ga_client)
             return True
         return False
 
