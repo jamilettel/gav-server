@@ -23,13 +23,14 @@ class GAServer(Generic[T]):
         host: str = "localhost",
         port: int = 8080,
         ga_data_provider: Callable[[], T] = None,
-        commands: dict[str, Callable[[T, dict], Tuple[str, bool] | None]] = {}
+        commands: dict[str, Callable[[T, dict], Tuple[str, bool] | None]] = {},
+        command_protocol: str = "generic"
     ):
         self.host = host
         self.port = port
         self.ga_data_provider = ga_data_provider
         self.commands = commands
-
+        self.command_protocol = command_protocol
 
     async def send_to_session(self, session: str, message: str):
         for _, client in self.connections.items():
@@ -66,6 +67,12 @@ class GAServer(Generic[T]):
                     c.session_name = None
                     await self.session_info(c)
 
+    async def session_describe(self, ga_client: GAClient):
+        await ga_client.ws.send(self.json_enc.encode({
+            "info": "session_describe",
+            "command_protocol": self.command_protocol
+        }))
+
     async def handle_builtin(self, ga_client: GAClient, data: dict):
         if "session" in data:
             match data["session"]:
@@ -77,6 +84,8 @@ class GAServer(Generic[T]):
                     await self.session_list(ga_client)
                 case "info":
                     await self.session_info(ga_client)
+                case "describe":
+                    await self.session_describe(ga_client)
             return True
         return False
 
