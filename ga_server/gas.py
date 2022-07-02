@@ -94,10 +94,10 @@ class GAServer(Generic[T]):
             if ga_client.session_name == None:
                 print("NoSession:", ga_client.ws.id)
                 return True
-            
+
             session = ga_client.session_name
             command = data["command"]
-            
+
             if command in self.commands:
                 response = self.commands[command](self.sessions[session], data)
                 if response is not None:
