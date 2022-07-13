@@ -66,8 +66,8 @@ def main():
 
     hof = tools.HallOfFame(1)
     stats = tools.Statistics(lambda ind: ind.fitness.values)
-    stats.register("Standard deviation in fitness", lambda x: {'std': numpy.std(x)})
     stats.register("Fitness", lambda x: {'max': numpy.max(x), 'min': numpy.min(x), 'mean': numpy.mean(x)})
+    stats.register("Standard deviation in fitness", lambda x: {'std': numpy.std(x)})
 
     run_deap_server(pop, toolbox, 0.7, 0.2, stats=stats)
     # algorithms.eaSimple(pop, toolbox, 0.7, 0.2, 40, stats=stats,
