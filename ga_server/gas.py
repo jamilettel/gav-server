@@ -24,13 +24,15 @@ class GAServer(Generic[T]):
         port: int = 8080,
         ga_data_provider: Callable[[], T] = None,
         commands: dict[str, Callable[[T, dict], Tuple[str, bool] | None]] = {},
-        command_protocol: str = "generic"
+        command_protocol: str = "generic",
+        title: str = "Generic Genetic Algorithm"
     ):
         self.host = host
         self.port = port
         self.ga_data_provider = ga_data_provider
         self.commands = commands
         self.command_protocol = command_protocol
+        self.title = title
 
     async def send_to_session(self, session: str, message: str):
         for _, client in self.connections.items():
@@ -70,6 +72,7 @@ class GAServer(Generic[T]):
     async def session_describe(self, ga_client: GAClient):
         await ga_client.ws.send(self.json_enc.encode({
             "info": "session_describe",
+            "title": self.title,
             "command_protocol": self.command_protocol
         }))
 

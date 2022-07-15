@@ -91,7 +91,8 @@ def run_deap_server(
     mutpb: float,
     stats: tools.Statistics,
     host: str = "localhost",
-    port: int = 8080
+    port: int = 8080,
+    title: str = "Generic Genetic Algorithm",
 ):
     json_enc = json.encoder.JSONEncoder()
 
@@ -132,7 +133,8 @@ def run_deap_server(
             "settings": settings,
             "set-setting": set_setting,
         },
-        command_protocol = "generic"
+        command_protocol = "generic",
+        title=title
     )
 
     server.run()
