@@ -76,6 +76,10 @@ class GAServer(Generic[T]):
             "command_protocol": self.command_protocol
         }))
 
+    async def session_leave(self, ga_client: GAClient):
+        ga_client.session_name = None
+        await self.session_info(ga_client)
+
     async def handle_builtin(self, ga_client: GAClient, data: dict):
         if "session" in data:
             match data["session"]:
@@ -89,6 +93,8 @@ class GAServer(Generic[T]):
                     await self.session_info(ga_client)
                 case "describe":
                     await self.session_describe(ga_client)
+                case "leave":
+                    await self.session_leave(ga_client)
             return True
         return False
 
