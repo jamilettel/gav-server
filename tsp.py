@@ -18,12 +18,12 @@ import array
 from os import getpid
 import random
 import json
+from typing import Dict
 
 import numpy
 
 from ga_server.deap_server import run_deap_server
 
-from deap import algorithms
 from deap import base
 from deap import creator
 from deap import tools
@@ -59,6 +59,14 @@ toolbox.register("mutate", tools.mutShuffleIndexes, indpb=0.05)
 toolbox.register("select", tools.selTournament, tournsize=3)
 toolbox.register("evaluate", evalTSP)
 
+def general_stats_provider(pop, _toolbox: base.Toolbox, hof: tools.HallOfFame | None) -> Dict:
+    general_stats = {}
+    general_stats["Optimal distance"] = str(tsp["OptDistance"])
+    if hof != None and len(hof.items) > 0:
+        general_stats["Best distance"] = str(hof.items[0].fitness.values[0])
+    general_stats["Population"] = str(len(pop))
+    return general_stats
+
 def main():
     random.seed(getpid())
 
@@ -69,9 +77,16 @@ def main():
     stats.register("Trip distance", lambda x: {'max': numpy.max(x), 'min': numpy.min(x), 'mean': numpy.mean(x)})
     stats.register("Standard deviation in trip distance", lambda x: {'std': numpy.std(x)})
 
-    run_deap_server(pop, toolbox, 0.7, 0.2, stats=stats, title="Travelling Salesman Problem")
-    # algorithms.eaSimple(pop, toolbox, 0.7, 0.2, 40, stats=stats,
-    #                     halloffame=hof)
+    run_deap_server(
+        pop, 
+        toolbox, 
+        cxpb=0.7, 
+        mutpb=0.2,
+        stats=stats,
+        title="Travelling Salesman Problem",
+        hof=hof,
+        general_stats_provider=general_stats_provider
+    )
 
     if len(hof.items) != 0:
         print(f'Best distance found: {hof.items[0].fitness.values[0]}')

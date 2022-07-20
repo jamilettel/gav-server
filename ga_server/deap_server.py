@@ -1,11 +1,10 @@
 
 from copy import deepcopy
 import json
-from typing import Any, Tuple
+from typing import Any, Dict, Tuple, Callable
 from deap import base
 from deap import tools
 from deap import algorithms
-from ga_server.client import GAClient
 
 from ga_server.gas import GAServer
 
@@ -37,9 +36,10 @@ class GADataDeap:
         for fit, ind in zip(fitness, offspring):
             ind.fitness.values = fit
 
-        self.hof.update(offspring)
-
         self.pop[:] = offspring
+
+        if self.hof is not None:
+            self.hof.update(self.pop)
 
         record = self.stats.compile(self.pop)
         self.records.append(record)
@@ -93,13 +93,28 @@ def run_deap_server(
     host: str = "localhost",
     port: int = 8080,
     title: str = "Generic Genetic Algorithm",
+    hof: tools.HallOfFame | None = None,
+    general_stats_provider: Callable[[Any, base.Toolbox, tools.HallOfFame], Dict] | None = None
 ):
     json_enc = json.encoder.JSONEncoder()
+
+    def get_general_stats(ga_data: GADataDeap) -> Dict:
+        general_stats = general_stats_provider(ga_data.pop, ga_data.toolbox, ga_data.hof) if general_stats_provider != None else {}
+        return {
+            **{
+                "generation": str(ga_data.generation),
+            },
+            **general_stats
+        }
+
 
     def info(ga_data: GADataDeap, _) -> Tuple[str, bool]:
         return (json_enc.encode({
             "info": "all",
-            "data": ga_data.info()
+            "data": {
+                **{ "general_stats": get_general_stats(ga_data) },
+                **ga_data.info(),
+            }
         }), False)
 
     def run_one_gen(ga_data: GADataDeap, _) -> Tuple[str, bool]:
@@ -107,7 +122,7 @@ def run_deap_server(
         return (json_enc.encode({
             "info": "one-gen",
             "data": {
-                "generation": ga_data.generation,
+                "general_stats": get_general_stats(ga_data),
                 "gen_stats": gen_stats
             }
         }), True)
@@ -124,7 +139,7 @@ def run_deap_server(
             return (settings(ga_data, {})[0], True)
         return None
 
-    default_data = GADataDeap(pop, toolbox, cxpb, mutpb, stats)
+    default_data = GADataDeap(pop, toolbox, cxpb, mutpb, stats, hof=hof)
     server: GAServer[GADataDeap] = GAServer(
         host, port, lambda: deepcopy(default_data),
         commands = {
