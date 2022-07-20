@@ -30,16 +30,7 @@ class GADataDeap:
         self.hof = hof
 
     def run_one_gen(self) -> dict:
-        offspring = self.toolbox.select(self.pop, len(self.pop))
-        offspring = algorithms.varAnd(offspring, self.toolbox, self.cxpb, self.mutpb)
-        fitness = self.toolbox.map(self.toolbox.evaluate, offspring)
-        for fit, ind in zip(fitness, offspring):
-            ind.fitness.values = fit
-
-        self.pop[:] = offspring
-
-        if self.hof is not None:
-            self.hof.update(self.pop)
+        algorithms.eaSimple(self.pop, self.toolbox, self.cxpb, self.mutpb, 1, halloffame=self.hof, verbose=False)
 
         record = self.stats.compile(self.pop)
         self.records.append(record)
@@ -49,7 +40,6 @@ class GADataDeap:
 
     def info(self) -> dict:
         return {
-            "generation": self.generation,
             "all_stats": self.records,
             "settings": self.settings()
         }
@@ -102,7 +92,7 @@ def run_deap_server(
         general_stats = general_stats_provider(ga_data.pop, ga_data.toolbox, ga_data.hof) if general_stats_provider != None else {}
         return {
             **{
-                "generation": str(ga_data.generation),
+                "Generation": str(ga_data.generation),
             },
             **general_stats
         }
