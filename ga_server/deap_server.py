@@ -10,9 +10,6 @@ from ga_server.gas import GAServer
 
 class GADataDeap:
 
-    generation = 0
-    records: list[dict[str, Any]] = []
-
     def __init__(
         self,
         pop,
@@ -28,6 +25,9 @@ class GADataDeap:
         self.mutpb = mutpb
         self.stats = stats
         self.hof = hof
+        self.generation = 0
+        self.records: list[dict[str, Any]] = []
+
 
     def run_one_gen(self) -> dict:
         algorithms.eaSimple(self.pop, self.toolbox, self.cxpb, self.mutpb, 1, halloffame=self.hof, verbose=False)
@@ -129,9 +129,11 @@ def run_deap_server(
             return (settings(ga_data, {})[0], True)
         return None
 
-    default_data = GADataDeap(pop, toolbox, cxpb, mutpb, stats, hof=hof)
+    def ga_data_provider():
+        return GADataDeap(deepcopy(pop), deepcopy(toolbox), cxpb, mutpb, deepcopy(stats), hof=deepcopy(hof))
+
     server: GAServer[GADataDeap] = GAServer(
-        host, port, lambda: deepcopy(default_data),
+        host, port, ga_data_provider,
         commands = {
             "info": info,
             "run-one-gen": run_one_gen,
