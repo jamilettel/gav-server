@@ -60,12 +60,11 @@ toolbox.register("select", tools.selTournament, tournsize=3)
 toolbox.register("evaluate", evalTSP)
 
 def general_stats_provider(pop, _toolbox: base.Toolbox, hof: tools.HallOfFame | None) -> Dict:
-    general_stats = {}
-    general_stats["Optimal distance"] = str(tsp["OptDistance"])
-    if hof != None and len(hof.items) > 0:
-        general_stats["Best distance"] = str(hof.items[0].fitness.values[0])
-    general_stats["Population"] = str(len(pop))
-    return general_stats
+    return {
+        "Optimal distance": str(tsp["OptDistance"]),
+        "Best found distance": str(hof.items[0].fitness.values[0]) if len(hof.items) > 0 else "N/A",
+        "Population": str(len(pop)),
+    }
 
 def main():
     random.seed(getpid())
@@ -76,6 +75,8 @@ def main():
     stats = tools.Statistics(lambda ind: ind.fitness.values)
     stats.register("Trip distance", lambda x: {'max': numpy.max(x), 'min': numpy.min(x), 'mean': numpy.mean(x)})
     stats.register("Standard deviation in trip distance", lambda x: {'std': numpy.std(x)})
+    stats.register("Trip distance 2", lambda x: {'max': numpy.max(x), 'min': numpy.min(x), 'mean': numpy.mean(x)})
+    stats.register("Trip distance 3", lambda x: {'max': numpy.max(x), 'min': numpy.min(x), 'mean': numpy.mean(x)})
 
     run_deap_server(
         pop, 

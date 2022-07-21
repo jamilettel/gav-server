@@ -49,12 +49,14 @@ class GADataDeap:
             "cxpb": {
                 "type": "number",
                 "value": self.cxpb,
-                "range": [0.0, 1.0]
+                "range": [0.0, 1.0],
+                "min_increment": 0.1,
             },
             "mutpb": {
                 "type": "number",
                 "value": self.mutpb,
-                "range": [0.0, 1.0]
+                "range": [0.0, 1.0],
+                "min_increment": 0.1,
             },
         }
 
