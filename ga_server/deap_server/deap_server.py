@@ -118,7 +118,7 @@ class DEAPServer:
 
         def settings(ga_data: GADataDeap, _) -> Tuple[str, bool]:
             return (json_enc.encode({
-                "info": "settings",
+                "info": "settings-update",
                 "settings": ga_data.settings()
             }), False)
 
