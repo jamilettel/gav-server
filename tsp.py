@@ -22,7 +22,7 @@ from typing import Dict
 
 import numpy
 
-from ga_server.deap_server import run_deap_server
+from ga_server.deap_server.deap_server import run_deap_server
 
 from deap import base
 from deap import creator
