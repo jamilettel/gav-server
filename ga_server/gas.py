@@ -64,10 +64,12 @@ class GAServer(Generic[T]):
     async def session_delete(self, ga_client: GAClient):
         name = ga_client.session_name
         if name != None:
-            for _, c in self.connections.items():
-                if c.session_name == name:
-                    c.session_name = None
-                    await self.session_info(c)
+            if name in self.sessions:
+                for _, c in self.connections.items():
+                    if c.session_name == name:
+                        c.session_name = None
+                        await self.session_info(c)
+                del self.sessions[name]
 
     async def session_describe(self, ga_client: GAClient):
         await ga_client.ws.send(self.json_enc.encode({

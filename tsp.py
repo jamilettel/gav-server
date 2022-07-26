@@ -50,10 +50,14 @@ def main():
 
     server.toolbox.register("evaluate", evalTSP)
 
-    server.register_mate("PMX", tools.cxPartialyMatched, default=True)
+    server.register_mate("Partially Matched", tools.cxPartialyMatched, default=True)
+    server.register_mate("Ordered", tools.cxOrdered)
+
     server.register_mutate("Shuffle Indexes", tools.mutShuffleIndexes, default=True, indpb=0.05)
-    server.register_select("Tournament Selection", tools.selTournament, default=True, tournsize=3)
-    server.register_select("Roulette Selection", tools.selRoulette, tournsize=3)
+    
+    server.register_select("Tournament", tools.selTournament, default=True, tournsize=3)
+    server.register_select("Best", tools.selBest)
+    server.register_select("Random", tools.selRandom)
 
     server.stats.register("Trip distance", lambda x: {'Maximum': numpy.max(x), 'Minimum': numpy.min(x), 'Mean': numpy.mean(x)})
     server.stats.register("Standard deviation in trip distance", lambda x: {'Standard deviation': numpy.std(x)})
