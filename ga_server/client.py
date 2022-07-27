@@ -1,11 +1,10 @@
-from websockets import client
+from socket import socket
 
 class GAClient():
-    ws: client.WebSocketClientProtocol
     messages: int = 0
     session_name: str | None = None
 
-    def __init__(self, ws: client.WebSocketClientProtocol):
+    def __init__(self, ws: socket):
         self.ws = ws
         pass
 

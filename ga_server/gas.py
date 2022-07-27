@@ -1,13 +1,10 @@
-import asyncio
 import json
-from re import A
-import signal
-from typing import Callable, Generic, Tuple, TypeVar
+from typing import Any, Callable, Generic, Tuple, TypeVar
 from uuid import UUID
-from websockets import exceptions
-from websockets import server
-from websockets import client
 from ga_server.client import GAClient
+from websock import WebSocketServer
+from threading import Lock
+from socket import socket
 
 T = TypeVar('T')
 
@@ -15,8 +12,12 @@ class GAServer(Generic[T]):
 
     json_dec = json.JSONDecoder()
     json_enc = json.JSONEncoder()
-    connections: dict[UUID, GAClient] = {}
+    
+    connections: dict[Any, GAClient] = {}
+    connections_mutex = Lock()
+    
     sessions: dict[str, T] = {}
+    sessions_mutex = Lock()
 
     def __init__(
         self,
@@ -33,74 +34,104 @@ class GAServer(Generic[T]):
         self.commands = commands
         self.command_protocol = command_protocol
         self.title = title
+        self.server = WebSocketServer(
+            self.host,
+            self.port,
+            on_data_receive=self.on_message,
+            on_connection_open=self.on_connect,
+            on_connection_close=self.on_close
+        )
 
-    async def send_to_session(self, session: str, message: str):
-        for _, client in self.connections.items():
-            if client.session_name == session:
-                await client.ws.send(message)
 
-    async def session_join_or_create(self, ga_client: GAClient, data: dict):
+    def send_to_session(self, session: str, message: str):
+        self.connections_mutex.acquire(1)
+        try:
+            for _, client in self.connections.items():
+                if client.session_name == session:
+                    self.server.send(client.ws, message)
+        finally:
+            self.connections_mutex.release()
+
+    def session_join_or_create(self, ga_client: GAClient, data: dict):
         if "name" in data:
             name = data["name"]
             if name == "":
                 return
-            elif name not in self.sessions:
-                self.sessions[name] = self.ga_data_provider()
-            ga_client.session_name = name
-            await self.session_info(ga_client)
-    
-    async def session_list(self, ga_client: GAClient):
-        await ga_client.ws.send(self.json_enc.encode({
-            "info": "session_list",
-            "sessions": [x for x in self.sessions]
-        }))
-    
-    async def session_info(self, ga_client: GAClient):
-        await ga_client.ws.send(self.json_enc.encode({
+
+            self.sessions_mutex.acquire(1)
+            try:
+                if name not in self.sessions:
+                    self.sessions[name] = self.ga_data_provider()
+                ga_client.session_name = name
+            finally:
+                self.sessions_mutex.release()
+
+            self.session_info(ga_client)
+
+    def session_list(self, ga_client: GAClient):
+        self.sessions_mutex.acquire(1)
+        try:
+            self.server.send(ga_client.ws, self.json_enc.encode({
+                "info": "session_list",
+                "sessions": [x for x in self.sessions]
+            }))
+        finally:
+            self.sessions_mutex.release()
+
+    def session_info(self, ga_client: GAClient):
+        self.server.send(ga_client.ws, self.json_enc.encode({
             "info": "session",
             "session": ga_client.session_name,
         }))
 
-    async def session_delete(self, ga_client: GAClient):
+    def session_delete(self, ga_client: GAClient):
         name = ga_client.session_name
-        if name != None:
+        if name == None:
+            return
+
+        self.connections_mutex.acquire(1)
+        self.sessions_mutex.acquire(1)
+        try:
             if name in self.sessions:
                 for _, c in self.connections.items():
                     if c.session_name == name:
                         c.session_name = None
-                        await self.session_info(c)
+                        self.session_info(c)
                 del self.sessions[name]
+        finally:
+            self.connections_mutex.release()
+            self.sessions_mutex.release()
 
-    async def session_describe(self, ga_client: GAClient):
-        await ga_client.ws.send(self.json_enc.encode({
+    def session_describe(self, ga_client: GAClient):
+        self.server.send(ga_client.ws, self.json_enc.encode({
             "info": "session_describe",
             "title": self.title,
             "command_protocol": self.command_protocol
         }))
 
-    async def session_leave(self, ga_client: GAClient):
+    def session_leave(self, ga_client: GAClient):
         ga_client.session_name = None
-        await self.session_info(ga_client)
+        self.session_info(ga_client)
 
-    async def handle_builtin(self, ga_client: GAClient, data: dict):
+    def handle_builtin(self, ga_client: GAClient, data: dict):
         if "session" in data:
             match data["session"]:
                 case "join-or-create":
-                    await self.session_join_or_create(ga_client, data)
+                    self.session_join_or_create(ga_client, data)
                 case "delete":
-                    await self.session_delete(ga_client)
+                    self.session_delete(ga_client)
                 case "list":
-                    await self.session_list(ga_client)
+                    self.session_list(ga_client)
                 case "info":
-                    await self.session_info(ga_client)
+                    self.session_info(ga_client)
                 case "describe":
-                    await self.session_describe(ga_client)
+                    self.session_describe(ga_client)
                 case "leave":
-                    await self.session_leave(ga_client)
+                    self.session_leave(ga_client)
             return True
         return False
 
-    async def handle_command(self, ga_client: GAClient, data: dict):
+    def handle_command(self, ga_client: GAClient, data: dict):
         if "command" in data:
             if ga_client.session_name == None:
                 print("NoSession:", ga_client.ws.id)
@@ -110,14 +141,20 @@ class GAServer(Generic[T]):
             command = data["command"]
 
             if command in self.commands:
-                response = self.commands[command](self.sessions[session], data)
+                self.sessions_mutex.acquire(1)
+                try:
+                    session_data = self.sessions[session]
+                finally:
+                    self.sessions_mutex.release()
+
+                response = self.commands[command](session_data, data)
                 if response is not None:
                     message = response[0]
                     broadcast = response[1]
                     if broadcast:
-                        await self.send_to_session(session, message)
+                        self.send_to_session(session, message)
                     else:
-                        await ga_client.ws.send(message)
+                        self.server.send(ga_client.ws, message)
             else:
                 print("CommandNotFound:", f'"{command}" from', ga_client)
 
@@ -125,42 +162,45 @@ class GAServer(Generic[T]):
         return False
 
 
-    async def message_handler(self, message, websocket: client.WebSocketClientProtocol):
-        ga_client = self.connections[websocket.id]
+    def message_handler(self, message: str, client: GAClient):
 
         try:
             data = self.json_dec.decode(message)
-            if await self.handle_builtin(ga_client, data) == True:
+            if self.handle_builtin(client, data) == True:
                 return
-            if await self.handle_command(ga_client, data) == False:
-                print("InvalidCommand:", f'"{message}" from', ga_client)
+            if self.handle_command(client, data) == False:
+                print("InvalidCommand:", f'"{message}" from', client)
         except json.JSONDecodeError:
-            print("InvalidJSON:", f'"{message}" from', ga_client)
+            print("InvalidJSON:", f'"{message}" from', client)
 
-    async def ws_handler(self, websocket: client.WebSocketClientProtocol):
-        self.connections[websocket.id] = GAClient(websocket)
-        print(f"Connected: {websocket.id}")
+    def on_connect(self, client: socket):
+        self.connections_mutex.acquire(1)
         try:
-            async for message in websocket:
-                await self.message_handler(message, websocket)
-
-        except exceptions.ConnectionClosedError:
-            pass
+            self.connections[client.getpeername()] = GAClient(client)
         finally:
-            del self.connections[websocket.id]
-            print(f"Disconnected: {websocket.id}")
+            self.connections_mutex.release()
+        print(f"Connected: {client.getpeername()}")
 
-    async def server_loop(self):
-        loop = asyncio.get_running_loop()
-        stop = loop.create_future()
-        loop.add_signal_handler(signal.SIGTERM, stop.set_result, None)
+    def on_close(self, client: socket):
+        self.connections_mutex.acquire(1)
+        try:
+            del self.connections[client.getpeername()]
+        finally:
+            self.connections_mutex.release()
+        print(f"Disconnected: {client.getpeername()}")
 
-        async with server.serve(self.ws_handler, self.host, self.port):
-            print(f"Server listening on {self.host}:{self.port}")
-            await stop
+    def on_message(self, client: socket, data: str):
+        self.connections_mutex.acquire(1)
+        try:
+            ga_client = self.connections[client.getpeername()]
+        finally:
+            self.connections_mutex.release()
+
+        self.message_handler(data, ga_client)
 
     def run(self):
         try:
-            asyncio.run(self.server_loop())
+            print(f"Server starting on {self.host}:{self.port}")
+            self.server.serve_forever()
         except KeyboardInterrupt:
             pass
