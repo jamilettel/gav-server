@@ -150,17 +150,17 @@ class GAServer(Generic[T]):
             del self.connections[websocket.id]
             print(f"Disconnected: {websocket.id}")
 
-    async def server_loop(self, host: str, port: int):
+    async def server_loop(self):
         loop = asyncio.get_running_loop()
         stop = loop.create_future()
         loop.add_signal_handler(signal.SIGTERM, stop.set_result, None)
 
-        async with server.serve(self.ws_handler, "localhost", port):
-            print(f"Server listening on {host}:{port}")
+        async with server.serve(self.ws_handler, self.host, self.port):
+            print(f"Server listening on {self.host}:{self.port}")
             await stop
 
     def run(self):
         try:
-            asyncio.run(self.server_loop(self.host, self.port))
+            asyncio.run(self.server_loop())
         except KeyboardInterrupt:
             pass
