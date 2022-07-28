@@ -1,6 +1,5 @@
 import json
 from typing import Any, Callable, Generic, Tuple, TypeVar
-from uuid import UUID
 from ga_server.client import GAClient
 from websock import WebSocketServer
 from threading import Lock
@@ -134,7 +133,7 @@ class GAServer(Generic[T]):
     def handle_command(self, ga_client: GAClient, data: dict):
         if "command" in data:
             if ga_client.session_name == None:
-                print("NoSession:", ga_client.ws.id)
+                print("NoSession:", ga_client.ws.getpeername())
                 return True
 
             session = ga_client.session_name
@@ -204,3 +203,5 @@ class GAServer(Generic[T]):
             self.server.serve_forever()
         except KeyboardInterrupt:
             pass
+        finally:
+            self.server.close_server()
