@@ -73,8 +73,14 @@ class GADataDeap:
     ### Information
 
     def info(self) -> dict:
+        popdata = [{ 
+            'chromosome': ind.tolist(),
+            'fitness': ind.fitness.values[0] if len(ind.fitness.values) > 0 else None
+        } for ind in self.pop]
+
         return {
             "all_stats": self.records,
+            "population": popdata,
             "settings": self.settings()
         }
 
