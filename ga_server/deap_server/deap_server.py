@@ -108,11 +108,13 @@ class DEAPServer:
 
         def run_one_gen(ga_data: GADataDeap, _) -> Tuple[str, bool]:
             gen_stats = ga_data.run_one_gen()
+            popdata = ga_data.get_pop_data()
             return (json_enc.encode({
                 "info": "one-gen",
                 "data": {
                     "general_stats": get_general_stats(ga_data),
-                    "gen_stats": gen_stats
+                    "gen_stats": gen_stats,
+                    "population": popdata
                 }
             }), True)
 

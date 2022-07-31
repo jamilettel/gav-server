@@ -59,6 +59,15 @@ class GADataDeap:
         self.mutate_value = mutate_default
         self.select_value = select_default
 
+
+    ### Utils
+
+    def get_pop_data(self) -> List[dict]:
+        return [{ 
+            'chromosome': ind.tolist(),
+            'fitness': ind.fitness.values[0] if len(ind.fitness.values) > 0 else None
+        } for ind in self.pop]
+
     ### Actions
 
     def run_one_gen(self) -> dict:
@@ -73,10 +82,7 @@ class GADataDeap:
     ### Information
 
     def info(self) -> dict:
-        popdata = [{ 
-            'chromosome': ind.tolist(),
-            'fitness': ind.fitness.values[0] if len(ind.fitness.values) > 0 else None
-        } for ind in self.pop]
+        popdata = self.get_pop_data()
 
         return {
             "all_stats": self.records,

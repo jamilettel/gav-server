@@ -131,33 +131,36 @@ class GAServer(Generic[T]):
         return False
 
     def handle_command(self, ga_client: GAClient, data: dict):
-        if "command" in data:
-            if ga_client.session_name == None:
-                print("NoSession:", ga_client.ws.getpeername())
+        try:
+            if "command" in data:
+                if ga_client.session_name == None:
+                    print("NoSession:", ga_client.ws.getpeername())
+                    return True
+
+                session = ga_client.session_name
+                command = data["command"]
+
+                if command in self.commands:
+                    self.sessions_mutex.acquire(1)
+                    try:
+                        session_data = self.sessions[session]
+                    finally:
+                        self.sessions_mutex.release()
+
+                    response = self.commands[command](session_data, data)
+                    if response is not None:
+                        message = response[0]
+                        broadcast = response[1]
+                        if broadcast:
+                            self.send_to_session(session, message)
+                        else:
+                            self.server.send(ga_client.ws, message)
+                else:
+                    print("CommandNotFound:", f'"{command}" from', ga_client)
+
                 return True
-
-            session = ga_client.session_name
-            command = data["command"]
-
-            if command in self.commands:
-                self.sessions_mutex.acquire(1)
-                try:
-                    session_data = self.sessions[session]
-                finally:
-                    self.sessions_mutex.release()
-
-                response = self.commands[command](session_data, data)
-                if response is not None:
-                    message = response[0]
-                    broadcast = response[1]
-                    if broadcast:
-                        self.send_to_session(session, message)
-                    else:
-                        self.server.send(ga_client.ws, message)
-            else:
-                print("CommandNotFound:", f'"{command}" from', ga_client)
-
-            return True
+        except:
+            pass
         return False
 
 
