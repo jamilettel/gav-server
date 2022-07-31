@@ -10,7 +10,7 @@ T = TypeVar('T')
 class GAServer(Generic[T]):
 
     json_dec = json.JSONDecoder()
-    json_enc = json.JSONEncoder(separators=(',', ';'))
+    json_enc = json.JSONEncoder(separators=(',', ':'))
     
     connections: dict[Any, GAClient] = {}
     connections_mutex = Lock()

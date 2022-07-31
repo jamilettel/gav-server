@@ -82,7 +82,7 @@ class DEAPServer:
         )
 
     def run(self):
-        json_enc = json.encoder.JSONEncoder(separators=(',', ';'))
+        json_enc = json.encoder.JSONEncoder(separators=(',', ':'))
 
         def get_general_stats(ga_data: GADataDeap) -> Dict:
             general_stats = self.general_stats_provider(
