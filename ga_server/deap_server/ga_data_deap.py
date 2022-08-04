@@ -33,8 +33,7 @@ class GADataDeap:
         self,
         pop,
         toolbox: base.Toolbox,
-        cxpb: float,
-        mutpb: float,
+        algorithm_kwargs: dict,
         stats: tools.Statistics,
         mate_settings: List[str],
         mutate_settings: List[str],
@@ -46,8 +45,7 @@ class GADataDeap:
     ):
         self.pop = pop
         self.toolbox = toolbox
-        self.cxpb = cxpb
-        self.mutpb = mutpb
+        self.algorithm_kwargs = algorithm_kwargs
         self.stats = stats
         self.hof = hof
         self.generation = 0
@@ -64,14 +62,14 @@ class GADataDeap:
 
     def get_pop_data(self) -> List[dict]:
         return [{ 
-            'chromosome': ind.tolist(),
-            'fitness': ind.fitness.values[0] if len(ind.fitness.values) > 0 else None
+            'Chromosome': ind.tolist(),
+            'Fitness': ind.fitness.values[0] if len(ind.fitness.values) > 0 else None
         } for ind in self.pop]
 
     ### Actions
 
     def run_one_gen(self) -> dict:
-        algorithms.eaSimple(self.pop, self.toolbox, self.cxpb, self.mutpb, 1, halloffame=self.hof, verbose=False)
+        algorithms.eaSimple(self.pop, self.toolbox, **self.algorithm_kwargs, ngen=1, halloffame=self.hof, verbose=False)
 
         record = self.stats.compile(self.pop)
         self.records.append(record)
@@ -94,13 +92,13 @@ class GADataDeap:
         settings = {
             SETTING_KEYS["cxpb"]["name"]: {
                 "type": "number",
-                "value": self.cxpb,
+                "value": self.algorithm_kwargs['cxpb'],
                 "range": [0.0, 1.0],
                 "min_increment": 0.1,
             },
             SETTING_KEYS["mutpb"]["name"]: {
                 "type": "number",
-                "value": self.mutpb,
+                "value": self.algorithm_kwargs['mutpb'],
                 "range": [0.0, 1.0],
                 "min_increment": 0.1,
             },
@@ -130,13 +128,13 @@ class GADataDeap:
 
     def upd_cxpb(self, setting_value) -> bool:
         if isnum(setting_value) and setting_value >= 0.0 and setting_value <= 1.0:
-            self.cxpb = setting_value
+            self.algorithm_kwargs['cxpb'] = setting_value
             return True
         return False
 
     def upd_mutpb(self, setting_value) -> bool:
         if isnum(setting_value) and setting_value >= 0.0 and setting_value <= 1.0:
-            self.mutpb = setting_value
+            self.algorithm_kwargs['mutpb'] = setting_value
             return True
         return False
 

@@ -11,9 +11,8 @@ from ga_server.deap_server.ga_data_deap import GADataDeap
 class DEAPServer:
 
     def __init__(
-        self, 
-        cxpb=0.7, 
-        mutpb=0.2,
+        self,
+        algorithm_kwargs: dict,
         title="Generic Genetic Algorithm",
         initial_pop_size=100,
         stats = tools.Statistics(),
@@ -23,12 +22,11 @@ class DEAPServer:
         port: int = 8080,
         general_stats_provider: Callable[[Any, base.Toolbox, tools.HallOfFame], Dict] | None = None,
     ) -> None:
+        self.algorithm_kwargs = algorithm_kwargs
         self.toolbox = toolbox
         self.stats = stats
         self.pop = []
         self.hof = halloffame
-        self.cxpb = cxpb
-        self.mutpb = mutpb
         self.general_stats_provider = general_stats_provider
         self.title = title
         self.initial_pop_size = initial_pop_size
@@ -69,8 +67,7 @@ class DEAPServer:
         return lambda: GADataDeap(
             self.toolbox.population(n=self.initial_pop_size),
             deepcopy(self.toolbox),
-            self.cxpb,
-            self.mutpb,
+            self.algorithm_kwargs,
             deepcopy(self.stats),
             self.mate_settings,
             self.mutate_settings,
@@ -143,5 +140,7 @@ class DEAPServer:
             command_protocol = "generic",
             title=self.title
         )
+
+        print(server.commands)
 
         server.run()

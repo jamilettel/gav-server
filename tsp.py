@@ -35,8 +35,10 @@ def general_stats_provider(pop, _toolbox: base.Toolbox, hof: tools.HallOfFame | 
 
 def main():
     server = DEAPServer(
-        cxpb=0.7,
-        mutpb=0.2,
+        algorithm_kwargs={
+            'cxpb': 0.7,
+            'mutpb': 0.2
+        },
         title="Travelling Salesman Problem",
         initial_pop_size=300,
         stats=tools.Statistics(lambda ind: ind.fitness.values),
