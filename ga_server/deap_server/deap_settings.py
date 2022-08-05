@@ -1,11 +1,11 @@
 from typing import Callable, List, Literal
-
 from ga_server.deap_server.ga_data_deap import GADataDeap
+
 
 def isnum(var):
     return type(var) is float or type(var) is int
 
-class DeapSettings:
+class DeapSetting:
     """
     Setting class for the DEAP server.
     Contains functions to get and set value in the GAData,
