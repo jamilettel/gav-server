@@ -86,7 +86,7 @@ class GADataDeap:
     def get_pop_data(self) -> List[dict]:
         return [{ 
             'Chromosome': ind.tolist(),
-            'Fitness': ind.fitness.values[0] if len(ind.fitness.values) > 0 else None
+            'Fitness': sum(ind.fitness.wvalues) if len(ind.fitness.wvalues) > 0 else None
         } for ind in self.pop]
 
     ### Actions
