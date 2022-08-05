@@ -2,8 +2,7 @@
 from copy import deepcopy
 import json
 from typing import Any, Dict, List, Tuple, Callable
-from deap import base, tools
-from deap import tools
+from deap import base, tools, algorithms
 from ga_server.gas import GAServer
 from ga_server.deap_server.ga_data_deap import GADataDeap
 
@@ -21,6 +20,7 @@ class DEAPServer:
         host: str = "localhost",
         port: int = 8080,
         general_stats_provider: Callable[[Any, base.Toolbox, tools.HallOfFame], Dict] | None = None,
+        algorithm = algorithms.eaSimple,
     ) -> None:
         self.algorithm_kwargs = algorithm_kwargs
         self.toolbox = toolbox
@@ -40,6 +40,7 @@ class DEAPServer:
         self.mate_default = ""
         self.mutate_default = ""
         self.select_default = ""
+        self.algorithm = algorithm
 
     def register_mate(self, name: str, function, default=False, *args, **kwargs):
         self.toolbox.register(f"mate_{name}", function, *args, **kwargs)
@@ -65,17 +66,18 @@ class DEAPServer:
 
     def get_ga_data_provider(self):
         return lambda: GADataDeap(
-            self.toolbox.population(n=self.initial_pop_size),
-            deepcopy(self.toolbox),
-            self.algorithm_kwargs,
-            deepcopy(self.stats),
-            self.mate_settings,
-            self.mutate_settings,
-            self.select_settings,
-            self.mate_default,
-            self.mutate_default,
-            self.select_default,
+            pop=self.toolbox.population(n=self.initial_pop_size),
+            toolbox=deepcopy(self.toolbox),
+            algorithm_kwargs=self.algorithm_kwargs,
+            stats=deepcopy(self.stats),
+            mate_settings=self.mate_settings,
+            mutate_settings=self.mutate_settings,
+            select_settings=self.select_settings,
+            mate_default=self.mate_default,
+            mutate_default=self.mutate_default,
+            select_default=self.select_default,
             hof=deepcopy(self.hof),
+            algorithm=deepcopy(self.algorithm),
         )
 
     def run(self):

@@ -2,7 +2,7 @@
 import json
 import random
 from typing import Dict
-from deap import creator, base, tools
+from deap import creator, base, tools, algorithms
 import array
 
 import numpy
@@ -39,6 +39,7 @@ def main():
             'cxpb': 0.7,
             'mutpb': 0.2
         },
+        algorithm=algorithms.eaSimple,
         title="Travelling Salesman Problem",
         initial_pop_size=300,
         stats=tools.Statistics(lambda ind: ind.fitness.values),

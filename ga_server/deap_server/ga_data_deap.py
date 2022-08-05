@@ -41,7 +41,8 @@ class GADataDeap:
         mate_default: str,
         mutate_default: str,
         select_default: str,
-        hof = tools.HallOfFame(1),
+        hof: tools.HallOfFame,
+        algorithm = algorithms.eaSimple,
     ):
         self.pop = pop
         self.toolbox = toolbox
@@ -56,6 +57,7 @@ class GADataDeap:
         self.mate_value = mate_default
         self.mutate_value = mutate_default
         self.select_value = select_default
+        self.algorithm = algorithm
 
 
     ### Utils
@@ -69,7 +71,7 @@ class GADataDeap:
     ### Actions
 
     def run_one_gen(self) -> dict:
-        algorithms.eaSimple(self.pop, self.toolbox, **self.algorithm_kwargs, ngen=1, halloffame=self.hof, verbose=False)
+        self.algorithm(self.pop, self.toolbox, **self.algorithm_kwargs, ngen=1, halloffame=self.hof, verbose=False)
 
         record = self.stats.compile(self.pop)
         self.records.append(record)
