@@ -1,5 +1,4 @@
-from typing import Callable, List, Literal
-from ga_server.deap_server.ga_data_deap import GADataDeap
+from typing import Any, Callable, List, Literal
 
 
 def isnum(var):
@@ -16,8 +15,8 @@ class DeapSetting:
         self,
         setting_type: Literal['string', 'number'], 
         name: str,
-        get_value: Callable[[GADataDeap], str | int | float],
-        handler: Callable[[GADataDeap, str | int | float], None],
+        get_value: Callable[[Any], str | int | float],
+        handler: Callable[[Any, str | int | float], None],
         setting_range: None | List[float] | List[int] = None,
     
         values: None | List[str] = None,
@@ -41,7 +40,7 @@ class DeapSetting:
         self.handler = handler
         self.min_increment = min_increment
 
-    def get_setting(self, ga_data: GADataDeap) -> dict:
+    def get_setting(self, ga_data):
         setting = {
             'type': self.type,
             'value': self.get_value(ga_data)
@@ -71,7 +70,7 @@ class DeapSetting:
             return False
         return True
 
-    def set_setting(self, ga_data: GADataDeap, value: str | int | float) -> bool:
+    def set_setting(self, ga_data, value: str | int | float) -> bool:
         if self.type == 'number' and not self.check_number_command(value):
             return False
         elif self.type == 'string' and not self.check_string_command(value):

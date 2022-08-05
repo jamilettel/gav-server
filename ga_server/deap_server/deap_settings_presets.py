@@ -1,5 +1,5 @@
 from typing import List
-from deap_server.deap_settings import DeapSetting
+from ga_server.deap_server.deap_settings import DeapSetting
 from ga_server.deap_server.ga_data_deap import GADataDeap
 
 def gen_getter_algorithm_kwargs(property: str):
@@ -14,10 +14,10 @@ def gen_setter_algorithm_kwargs(property: str):
 
 def cxpb_deap_setting(
     name: str = 'Crossover probability',
-    min_increment: float = 0.01,
+    min_increment: float = 0.1,
     setting_range: List[float] = [0.0, 1.0],
 ):
-    DeapSetting(
+    return DeapSetting(
         setting_type='number',
         name=name,
         min_increment=min_increment,
@@ -28,10 +28,10 @@ def cxpb_deap_setting(
 
 def mutpb_deap_setting(
     name: str = 'Mutation probability',
-    min_increment: float = 0.01,
+    min_increment: float = 0.1,
     setting_range: List[float] = [0.0, 1.0],
 ):
-    DeapSetting(
+    return DeapSetting(
         setting_type='number',
         name=name,
         min_increment=min_increment,
@@ -67,4 +67,3 @@ def lambda_deap_settings(
         get_value=gen_getter_algorithm_kwargs('lambda_'),
         handler=gen_setter_algorithm_kwargs('lambda_'),
     )
-

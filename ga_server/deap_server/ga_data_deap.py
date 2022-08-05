@@ -1,28 +1,7 @@
+from typing_extensions import Self
 from deap import algorithms, base, tools
 from typing import Any, List
-
-SETTING_KEYS = {
-    "mutpb": {
-        "name": "Mutation probability",
-        "handler": lambda ga_data, command: ga_data.upd_mutpb(command)
-    },
-    "cxpb": {
-        "name": "Crossover probability",
-        "handler": lambda ga_data, command: ga_data.upd_cxpb(command)
-    },
-    "mate": {
-        "name": "Crossover",
-        "handler": lambda ga_data, command: ga_data.upd_mate(command)
-    },
-    "mutate": {
-        "name": "Mutation",
-        "handler": lambda ga_data, command: ga_data.upd_mutate(command)
-    },
-    "select": {
-        "name": "Selection",
-        "handler": lambda ga_data, command: ga_data.upd_select(command)
-    },
-}
+from ga_server.deap_server.deap_settings import DeapSetting
 
 def isnum(var):
     return type(var) is float or type(var) is int
@@ -42,6 +21,7 @@ class GADataDeap:
         mutate_default: str,
         select_default: str,
         hof: tools.HallOfFame,
+        settings: List[DeapSetting],
         algorithm = algorithms.eaSimple,
     ):
         self.pop = pop
@@ -57,8 +37,49 @@ class GADataDeap:
         self.mate_value = mate_default
         self.mutate_value = mutate_default
         self.select_value = select_default
+        self.settings = settings
         self.algorithm = algorithm
+        self.add_default_settings()
 
+    def add_default_settings(self):
+        if len(self.mutate_settings) > 1:
+            self.settings.append(DeapSetting(
+                setting_type='string',
+                name='Mutation',
+                get_value=lambda ga_data: ga_data.mutate_value,
+                handler=GADataDeap.upd_mutate,
+                values=self.mutate_settings
+            ))
+        if len(self.mate_settings) > 1:
+            self.settings.append(DeapSetting(
+                setting_type='string',
+                name='Crossover',
+                get_value=lambda ga_data: ga_data.mate_value,
+                handler=GADataDeap.upd_mate,
+                values=self.mate_settings
+            ))
+        if len(self.select_settings) > 1:
+            self.settings.append(DeapSetting(
+                setting_type='string',
+                name='Selection',
+                get_value=lambda ga_data: ga_data.select_value,
+                handler=GADataDeap.upd_select,
+                values=self.select_settings
+            ))
+
+    ### Settings
+
+    def upd_mate(ga_data: Self, setting_value):
+        ga_data.mate_value = setting_value
+        ga_data.toolbox.register("mate", getattr(ga_data.toolbox, f"mate_{setting_value}"))
+
+    def upd_mutate(ga_data: Self, setting_value) -> bool:
+        ga_data.mutate_value = setting_value
+        ga_data.toolbox.register("mutate", getattr(ga_data.toolbox, f"mutate_{setting_value}"))
+
+    def upd_select(ga_data: Self, setting_value) -> bool:
+        ga_data.select_value = setting_value
+        ga_data.toolbox.register("select", getattr(ga_data.toolbox, f"select_{setting_value}"))
 
     ### Utils
 
@@ -87,79 +108,14 @@ class GADataDeap:
         return {
             "all_stats": self.records,
             "population": popdata,
-            "settings": self.settings()
+            "settings": self.get_settings()
         }
 
-    def settings(self) -> dict:
-        settings = {
-            SETTING_KEYS["cxpb"]["name"]: {
-                "type": "number",
-                "value": self.algorithm_kwargs['cxpb'],
-                "range": [0.0, 1.0],
-                "min_increment": 0.1,
-            },
-            SETTING_KEYS["mutpb"]["name"]: {
-                "type": "number",
-                "value": self.algorithm_kwargs['mutpb'],
-                "range": [0.0, 1.0],
-                "min_increment": 0.1,
-            },
-        }
-        if len(self.mate_settings) > 1:
-            settings[SETTING_KEYS["mate"]["name"]] = {
-                "type": "string",
-                "value": self.mate_value,
-                "values": self.mate_settings
-            }
-        if len(self.mutate_settings) > 1:
-            settings[SETTING_KEYS["mutate"]["name"]] = {
-                "type": "string",
-                "value": self.mutate_value,
-                "values": self.mutate_settings
-            }
-        if len(self.select_settings) > 1:
-            settings[SETTING_KEYS["select"]["name"]] = {
-                "type": "string",
-                "value": self.select_value,
-                "values": self.select_settings
-            }
+    def get_settings(self) -> dict:
+        settings = {}
+        for setting in self.settings:
+            settings.update(setting.get_setting(self))
         return settings
-
-
-    ### Settings
-
-    def upd_cxpb(self, setting_value) -> bool:
-        if isnum(setting_value) and setting_value >= 0.0 and setting_value <= 1.0:
-            self.algorithm_kwargs['cxpb'] = setting_value
-            return True
-        return False
-
-    def upd_mutpb(self, setting_value) -> bool:
-        if isnum(setting_value) and setting_value >= 0.0 and setting_value <= 1.0:
-            self.algorithm_kwargs['mutpb'] = setting_value
-            return True
-        return False
-
-    def upd_mate(self, setting_value) -> bool:
-        if type(setting_value) is not str or setting_value not in self.mate_settings:
-            return False
-        self.mate_value = setting_value
-        self.toolbox.register("mate", getattr(self.toolbox, f"mate_{setting_value}"))
-        return True
-
-    def upd_mutate(self, setting_value) -> bool:
-        if type(setting_value) is not str or setting_value not in self.mutate_settings:
-            return False
-        self.mutate_value = setting_value
-        self.toolbox.register("mutate", getattr(self.toolbox, f"mutate_{setting_value}"))
-        return True
-
-    def upd_select(self, setting_value) -> bool:
-        if type(setting_value) is not str or setting_value not in self.select_settings:
-            return False
-        self.select_value = setting_value
-        self.toolbox.register("select", getattr(self.toolbox, f"select_{setting_value}"))
-        return True
 
     ### Settings handler
     
@@ -170,8 +126,9 @@ class GADataDeap:
         setting_value = command["setting_value"]
         if type(setting_name) is not str:
             return False
-        for setting in SETTING_KEYS:
-            if SETTING_KEYS[setting]["name"] == setting_name:
-                return SETTING_KEYS[setting]["handler"](self, setting_value)
+        for setting in self.settings:
+            if setting.name == setting_name:
+                setting.set_setting(self, setting_value)
+                return True
         return False
 

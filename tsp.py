@@ -7,6 +7,7 @@ import array
 
 import numpy
 from ga_server.deap_server.deap_server import DEAPServer
+from ga_server.deap_server.deap_settings_presets import cxpb_deap_setting, mutpb_deap_setting
 
 
 
@@ -44,6 +45,10 @@ def main():
         initial_pop_size=300,
         stats=tools.Statistics(lambda ind: ind.fitness.values),
         general_stats_provider=general_stats_provider,
+        settings=[
+            mutpb_deap_setting(),
+            cxpb_deap_setting(),
+        ]
     )
 
     server.toolbox.register("indices", random.sample, range(IND_SIZE), IND_SIZE)

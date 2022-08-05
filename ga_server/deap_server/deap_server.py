@@ -3,6 +3,7 @@ from copy import deepcopy
 import json
 from typing import Any, Dict, List, Tuple, Callable
 from deap import base, tools, algorithms
+from ga_server.deap_server.deap_settings import DeapSetting
 from ga_server.gas import GAServer
 from ga_server.deap_server.ga_data_deap import GADataDeap
 
@@ -21,6 +22,7 @@ class DEAPServer:
         port: int = 8080,
         general_stats_provider: Callable[[Any, base.Toolbox, tools.HallOfFame], Dict] | None = None,
         algorithm = algorithms.eaSimple,
+        settings: List[DeapSetting] = []
     ) -> None:
         self.algorithm_kwargs = algorithm_kwargs
         self.toolbox = toolbox
@@ -41,6 +43,7 @@ class DEAPServer:
         self.mutate_default = ""
         self.select_default = ""
         self.algorithm = algorithm
+        self.settings = settings
 
     def register_mate(self, name: str, function, default=False, *args, **kwargs):
         self.toolbox.register(f"mate_{name}", function, *args, **kwargs)
@@ -78,6 +81,7 @@ class DEAPServer:
             select_default=self.select_default,
             hof=deepcopy(self.hof),
             algorithm=deepcopy(self.algorithm),
+            settings=deepcopy(self.settings),
         )
 
     def run(self):
@@ -120,7 +124,7 @@ class DEAPServer:
         def settings(ga_data: GADataDeap, _) -> Tuple[str, bool]:
             return (json_enc.encode({
                 "info": "settings-update",
-                "settings": ga_data.settings()
+                "settings": ga_data.get_settings()
             }), False)
 
         def set_setting(ga_data: GADataDeap, command: dict) -> Tuple[str, bool] | None:
@@ -142,7 +146,5 @@ class DEAPServer:
             command_protocol = "generic",
             title=self.title
         )
-
-        print(server.commands)
 
         server.run()
