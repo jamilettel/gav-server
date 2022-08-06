@@ -7,7 +7,8 @@ import array
 
 import numpy
 from ga_server.deap_server.deap_server import DEAPServer
-from ga_server.deap_server.deap_settings_presets import cxpb_deap_setting, mutpb_deap_setting
+from ga_server.deap_server.deap_settings_presets import get_cxpb_deap_setting, get_mutpb_deap_setting
+from ga_server.deap_server.individual_encoding import get_ind_enc_indexes
 
 
 
@@ -16,9 +17,6 @@ with open("tsp.json", "r") as tsp_data:
 
 distance_map = tsp["DistanceMatrix"]
 IND_SIZE = tsp["TourSize"]
-
-creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
-creator.create("Individual", array.array, typecode='i', fitness=creator.FitnessMin)
 
 def evalTSP(individual):
     distance = distance_map[individual[-1]][individual[0]]
@@ -46,10 +44,14 @@ def main():
         stats=tools.Statistics(lambda ind: ind.fitness.values),
         general_stats_provider=general_stats_provider,
         settings=[
-            mutpb_deap_setting(),
-            cxpb_deap_setting(),
-        ]
+            get_mutpb_deap_setting(),
+            get_cxpb_deap_setting(),
+        ],
+        individual_encoding=get_ind_enc_indexes()
     )
+
+    creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
+    creator.create("Individual", array.array, typecode='i', fitness=creator.FitnessMin)
 
     server.toolbox.register("indices", random.sample, range(IND_SIZE), IND_SIZE)
 

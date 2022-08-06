@@ -1,21 +1,10 @@
 #!/usr/bin/env python
-#    This file is part of DEAP.
-#
-#    DEAP is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU Lesser General Public License as
-#    published by the Free Software Foundation, either version 3 of
-#    the License, or (at your option) any later version.
-#
-#    DEAP is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-#    GNU Lesser General Public License for more details.
-#
-#    You should have received a copy of the GNU Lesser General Public
-#    License along with DEAP. If not, see <http://www.gnu.org/licenses/>.
+# For information about the kursawe benchmark, check out the doc linked below
+# https://deap.readthedocs.io/en/master/api/benchmarks.html#deap.benchmarks.kursawe
 
 import array
 import logging
+from ga_server.deap_server.deap_server import DEAPServer
 import random
 
 import numpy
@@ -26,17 +15,8 @@ from deap import benchmarks
 from deap import creator
 from deap import tools
 
-creator.create("FitnessMin", base.Fitness, weights=(-1.0, -1.0))
-creator.create("Individual", array.array, typecode='d', fitness=creator.FitnessMin)
-
-toolbox = base.Toolbox()
-
-# Attribute generator
-toolbox.register("attr_float", random.uniform, -5, 5)
-
-# Structure initializers
-toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_float, 3)
-toolbox.register("population", tools.initRepeat, list, toolbox.individual)
+from ga_server.deap_server.deap_settings_presets import get_cxpb_deap_setting, get_lambda_deap_settings, get_mu_deap_settings, get_mutpb_deap_setting
+from ga_server.deap_server.individual_encoding import get_ind_enc_values
 
 def checkBounds(min, max):
     def decorator(func):
@@ -52,33 +32,84 @@ def checkBounds(min, max):
         return wrappper
     return decorator
 
-toolbox.register("evaluate", benchmarks.kursawe)
-toolbox.register("mate", tools.cxBlend, alpha=1.5)
-toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=3, indpb=0.3)
-toolbox.register("select", tools.selNSGA2)
+def get_result_one_function(fitness_values, index, fct):
+    values = [v.values[index] for v in fitness_values]
+    return fct(values)
 
-toolbox.decorate("mate", checkBounds(-5, 5))
-toolbox.decorate("mutate", checkBounds(-5, 5)) 
+def get_result_fitness(fitness_values, fct):
+    values = [sum(v.wvalues) for v in fitness_values]
+    return fct(values)
 
 def main():
     random.seed(64)
-
     MU, LAMBDA = 50, 100
-    pop = toolbox.population(n=MU)
-    stats = tools.Statistics(lambda ind: ind.fitness.values)
-    stats.register("avg", numpy.mean, axis=0)
-    stats.register("std", numpy.std, axis=0)
-    stats.register("min", numpy.min, axis=0)
-    stats.register("max", numpy.max, axis=0)
 
-    algorithms.eaMuPlusLambda(pop, toolbox, mu=MU, lambda_=LAMBDA, 
-                              cxpb=0.5, mutpb=0.2, ngen=150, 
-                              stats=stats, halloffame=hof)
+    server = DEAPServer(
+        port=8081,
 
-    return pop, stats, hof
+        algorithm_kwargs={
+            'mu': MU,
+            'lambda_': LAMBDA,
+            'cxpb': 0.5,
+            'mutpb': 0.2
+        },
+        algorithm=algorithms.eaMuPlusLambda,
+        title="Kursawe Benchmark",
+        initial_pop_size=MU,
+        stats=tools.Statistics(lambda ind: ind.fitness),
+        settings=[
+            get_mutpb_deap_setting(),
+            get_cxpb_deap_setting(),
+            get_lambda_deap_settings(),
+            get_mu_deap_settings(),
+        ],
+        individual_encoding=get_ind_enc_values(-5, 5)
+    )
+
+    creator.create("FitnessMin", base.Fitness, weights=(-1.0, -1.0))
+    creator.create("Individual", array.array, typecode='d', fitness=creator.FitnessMin)
+
+    # Attribute generator
+    server.toolbox.register("attr_float", random.uniform, -5, 5)
+
+    # Structure initializers
+    server.toolbox.register("individual", tools.initRepeat, creator.Individual, server.toolbox.attr_float, 3)
+    server.toolbox.register("population", tools.initRepeat, list, server.toolbox.individual)
+
+
+    server.toolbox.register("evaluate", benchmarks.kursawe)
+    server.register_mate("cxBlend", tools.cxBlend, default=True, alpha=1.5)
+    server.register_mutate("mutGaussian", tools.mutGaussian, default=True, mu=0, sigma=3, indpb=0.3)
+    server.register_select("selNSGA2", tools.selNSGA2, default=True)
+
+    server.toolbox.decorate("mate", checkBounds(-5, 5))
+    server.toolbox.decorate("mutate", checkBounds(-5, 5)) 
+
+
+    server.stats = tools.Statistics(lambda ind: ind.fitness)
+    server.stats.register("Function 1", lambda values: {
+        'mean': get_result_one_function(values, 0, numpy.mean),
+        'min': get_result_one_function(values, 0, numpy.min),
+        'max': get_result_one_function(values, 0, numpy.max),
+    })
+    server.stats.register("Function 2", lambda values: {
+        'mean': get_result_one_function(values, 1, numpy.mean),
+        'min': get_result_one_function(values, 1, numpy.min),
+        'max': get_result_one_function(values, 1, numpy.max),
+    })
+    server.stats.register("Fitness", lambda values: {
+        'mean': get_result_fitness(values, numpy.mean),
+        'min': get_result_fitness(values, numpy.min),
+        'max': get_result_fitness(values, numpy.max),
+    })
+    server.stats.register("Fitness Standard Deviation", lambda values: {
+        'Standard deviation': get_result_fitness(values, numpy.std)
+    })
+
+    server.run()
 
 if __name__ == "__main__":
-    pop, stats, hof = main()
+    main()
 
     # import matplotlib.pyplot as plt
     # import numpy

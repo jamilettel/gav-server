@@ -4,6 +4,7 @@ import json
 from typing import Any, Dict, List, Tuple, Callable
 from deap import base, tools, algorithms
 from ga_server.deap_server.deap_settings import DeapSetting
+from ga_server.deap_server.individual_encoding import get_ind_enc_indexes
 from ga_server.gas import GAServer
 from ga_server.deap_server.ga_data_deap import GADataDeap
 
@@ -22,7 +23,8 @@ class DEAPServer:
         port: int = 8080,
         general_stats_provider: Callable[[Any, base.Toolbox, tools.HallOfFame], Dict] | None = None,
         algorithm = algorithms.eaSimple,
-        settings: List[DeapSetting] = []
+        settings: List[DeapSetting] = [],
+        individual_encoding: dict[str,str] = get_ind_enc_indexes(),
     ) -> None:
         self.algorithm_kwargs = algorithm_kwargs
         self.toolbox = toolbox
@@ -44,6 +46,8 @@ class DEAPServer:
         self.select_default = ""
         self.algorithm = algorithm
         self.settings = settings
+        
+        self.individual_encoding = individual_encoding
 
     def register_mate(self, name: str, function, default=False, *args, **kwargs):
         self.toolbox.register(f"mate_{name}", function, *args, **kwargs)
@@ -96,6 +100,7 @@ class DEAPServer:
             return {
                 **{
                     "Generation": str(ga_data.generation),
+                    "Population": str(len(ga_data.pop))
                 },
                 **general_stats
             }

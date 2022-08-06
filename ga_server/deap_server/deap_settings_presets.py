@@ -12,7 +12,7 @@ def gen_setter_algorithm_kwargs(property: str):
         ga_data.algorithm_kwargs[property] = value
     return getter_algorithm_kwargs
 
-def cxpb_deap_setting(
+def get_cxpb_deap_setting(
     name: str = 'Crossover probability',
     min_increment: float = 0.1,
     setting_range: List[float] = [0.0, 1.0],
@@ -26,7 +26,7 @@ def cxpb_deap_setting(
         handler=gen_setter_algorithm_kwargs('cxpb'),
     )
 
-def mutpb_deap_setting(
+def get_mutpb_deap_setting(
     name: str = 'Mutation probability',
     min_increment: float = 0.1,
     setting_range: List[float] = [0.0, 1.0],
@@ -40,7 +40,7 @@ def mutpb_deap_setting(
         handler=gen_setter_algorithm_kwargs('mutpb'),
     )
 
-def mu_deap_settings(
+def get_mu_deap_settings(
     name: str = 'Population size',
     min_increment: int = 1,
     setting_range: List[int] = [0,1000],
@@ -54,7 +54,7 @@ def mu_deap_settings(
         handler=gen_setter_algorithm_kwargs('mu'),
     )
 
-def lambda_deap_settings(
+def get_lambda_deap_settings(
     name: str = 'Offspring population size',
     min_increment: int = 1,
     setting_range: List[int] = [0,1000],
