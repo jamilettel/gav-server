@@ -16,7 +16,7 @@ from deap import creator
 from deap import tools
 
 from ga_server.deap_server.deap_settings_presets import get_cxpb_deap_setting, get_lambda_deap_settings, get_mu_deap_settings, get_mutpb_deap_setting
-from ga_server.deap_server.individual_encoding import get_ind_enc_values
+from ga_server.deap_server.individual_encoding import get_ind_enc_range
 
 def checkBounds(min, max):
     def decorator(func):
@@ -63,7 +63,7 @@ def main():
             get_lambda_deap_settings(),
             get_mu_deap_settings(),
         ],
-        individual_encoding=get_ind_enc_values(-5, 5)
+        individual_encoding=get_ind_enc_range(-5, 5)
     )
 
     creator.create("FitnessMin", base.Fitness, weights=(-1.0, -1.0))

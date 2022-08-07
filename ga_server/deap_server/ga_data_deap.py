@@ -22,6 +22,7 @@ class GADataDeap:
         select_default: str,
         hof: tools.HallOfFame,
         settings: List[DeapSetting],
+        individual_encoding: dict[str, str],
         algorithm = algorithms.eaSimple,
     ):
         self.pop = pop
@@ -39,6 +40,7 @@ class GADataDeap:
         self.select_value = select_default
         self.settings = settings
         self.algorithm = algorithm
+        self.individual_encoding = individual_encoding
         self.add_default_settings()
 
     def add_default_settings(self):
@@ -108,7 +110,8 @@ class GADataDeap:
         return {
             "all_stats": self.records,
             "population": popdata,
-            "settings": self.get_settings()
+            "settings": self.get_settings(),
+            "individual_encoding": self.individual_encoding,
         }
 
     def get_settings(self) -> dict:

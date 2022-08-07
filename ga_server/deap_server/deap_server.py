@@ -86,6 +86,7 @@ class DEAPServer:
             hof=deepcopy(self.hof),
             algorithm=deepcopy(self.algorithm),
             settings=deepcopy(self.settings),
+            individual_encoding=deepcopy(self.individual_encoding),
         )
 
     def run(self):
