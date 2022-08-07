@@ -51,6 +51,12 @@ class GAServer(Generic[T]):
         finally:
             self.connections_mutex.release()
 
+    def get_session_list(self):
+        return {
+            "info": "session_list",
+            "sessions": [x for x in self.sessions]
+        }
+
     def session_join_or_create(self, ga_client: GAClient, data: dict):
         if "name" in data:
             name = data["name"]
@@ -58,22 +64,23 @@ class GAServer(Generic[T]):
                 return
 
             self.sessions_mutex.acquire(1)
+            self.connections_mutex.acquire(1)
             try:
                 if name not in self.sessions:
                     self.sessions[name] = self.ga_data_provider()
+                    for _, client in self.connections.items():
+                        self.server.send(client.ws, self.json_enc.encode(self.get_session_list()))
                 ga_client.session_name = name
             finally:
                 self.sessions_mutex.release()
+                self.connections_mutex.release()
 
             self.session_info(ga_client)
 
-    def session_list(self, ga_client: GAClient):
+    def send_session_list(self, ga_client: GAClient):
         self.sessions_mutex.acquire(1)
         try:
-            self.server.send(ga_client.ws, self.json_enc.encode({
-                "info": "session_list",
-                "sessions": [x for x in self.sessions]
-            }))
+            self.server.send(ga_client.ws, self.json_enc.encode(self.get_session_list()))
         finally:
             self.sessions_mutex.release()
 
@@ -120,7 +127,7 @@ class GAServer(Generic[T]):
                 case "delete":
                     self.session_delete(ga_client)
                 case "list":
-                    self.session_list(ga_client)
+                    self.send_session_list(ga_client)
                 case "info":
                     self.session_info(ga_client)
                 case "describe":
