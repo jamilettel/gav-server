@@ -104,6 +104,8 @@ class GAServer(Generic[T]):
                         c.session_name = None
                         self.session_info(c)
                 del self.sessions[name]
+                for _, client in self.connections.items():
+                    self.server.send(client.ws, self.json_enc.encode(self.get_session_list()))
         finally:
             self.connections_mutex.release()
             self.sessions_mutex.release()
