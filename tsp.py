@@ -68,6 +68,11 @@ def main():
     server.register_select("Tournament", tools.selTournament, default=True, tournsize=3)
     server.register_select("Best", tools.selBest)
     server.register_select("Random", tools.selRandom)
+    server.register_select("Random2", tools.selRandom)
+    server.register_select("Random3", tools.selRandom)
+    server.register_select("Random4", tools.selRandom)
+    server.register_select("Random5", tools.selRandom)
+    server.register_select("Random6", tools.selRandom)
 
     server.stats.register("Trip distance", lambda x: {'Maximum': numpy.max(x), 'Minimum': numpy.min(x), 'Mean': numpy.mean(x)})
     server.stats.register("Standard deviation in trip distance", lambda x: {'Standard deviation': numpy.std(x)})

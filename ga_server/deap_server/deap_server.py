@@ -75,7 +75,7 @@ class DEAPServer:
         return lambda: GADataDeap(
             pop=self.toolbox.population(n=self.initial_pop_size),
             toolbox=deepcopy(self.toolbox),
-            algorithm_kwargs=self.algorithm_kwargs,
+            algorithm_kwargs=deepcopy(self.algorithm_kwargs),
             stats=deepcopy(self.stats),
             mate_settings=self.mate_settings,
             mutate_settings=self.mutate_settings,
