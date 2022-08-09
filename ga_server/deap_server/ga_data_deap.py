@@ -135,3 +135,16 @@ class GADataDeap:
                 return True
         return False
 
+    def set_settings(self, command: dict) -> bool:
+        print(command)
+        if "settings" not in command or type(command["settings"]) is not dict:
+            return False
+        for setting_name, setting_value in command["settings"].items():
+            if type(setting_name) is not str:
+                return False
+            for setting in self.settings:
+                if setting.name == setting_name:
+                    if not setting.set_setting(self, setting_value):
+                        return False
+                    break
+        return True
