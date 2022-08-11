@@ -23,7 +23,7 @@ class GAServer(Generic[T]):
         host: str = "localhost",
         port: int = 8080,
         ga_data_provider: Callable[[], T] = None,
-        commands: dict[str, Callable[[T, dict], Tuple[str, bool] | None]] = {},
+        commands: dict[str, Callable[[T, dict, Callable[[str], None], Callable[[str], None]], Tuple[str, bool] | None]] = {},
         command_protocol: str = "generic",
         title: str = "Generic Genetic Algorithm"
     ):
@@ -156,19 +156,18 @@ class GAServer(Generic[T]):
                     finally:
                         self.sessions_mutex.release()
 
-                    response = self.commands[command](session_data, data)
-                    if response is not None:
-                        message = response[0]
-                        broadcast = response[1]
-                        if broadcast:
-                            self.send_to_session(session, message)
-                        else:
-                            self.server.send(ga_client.ws, message)
+                    self.commands[command](
+                        session_data, 
+                        data, 
+                        lambda msg: self.send_to_session(session, msg), 
+                        lambda msg: self.server.send(ga_client.ws, msg)
+                    )
                 else:
                     print("CommandNotFound:", f'"{command}" from', ga_client)
 
                 return True
-        except:
+        except Exception as e:
+            print(e)
             pass
         return False
 

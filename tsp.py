@@ -29,7 +29,6 @@ def general_stats_provider(pop, _toolbox: base.Toolbox, hof: tools.HallOfFame | 
     return {
         "Optimal distance": str(tsp["OptDistance"]),
         "Best found distance": str(hof.items[0].fitness.values[0]) if len(hof.items) > 0 else "N/A",
-        "Population": str(len(pop)),
     }
 
 def main():

@@ -106,38 +106,40 @@ class DEAPServer:
                 **general_stats
             }
 
-        def info(ga_data: GADataDeap, _) -> Tuple[str, bool]:
-            return (json_enc.encode({
+        def info(ga_data: GADataDeap, _command, _broadcast, send_to_client) -> Tuple[str, bool]:
+            send_to_client(json_enc.encode({
                 "info": "all",
                 "data": {
                     **{ "general_stats": get_general_stats(ga_data) },
                     **ga_data.info(),
                 }
-            }), False)
+            }))
 
-        def run_one_gen(ga_data: GADataDeap, _) -> Tuple[str, bool]:
+        def run_one_gen(ga_data: GADataDeap, _command, broadcast, _send_to_client):
             gen_stats = ga_data.run_one_gen()
             popdata = ga_data.get_pop_data()
-            return (json_enc.encode({
+            broadcast(json_enc.encode({
                 "info": "one-gen",
                 "data": {
                     "general_stats": get_general_stats(ga_data),
                     "gen_stats": gen_stats,
                     "population": popdata
                 }
-            }), True)
+            }))
 
-        def settings(ga_data: GADataDeap, _) -> Tuple[str, bool]:
-            return (json_enc.encode({
+        def get_settings(ga_data: GADataDeap):
+            return json_enc.encode({
                 "info": "settings-update",
                 "settings": ga_data.get_settings()
-            }), False)
+            })
 
-        def set_setting(ga_data: GADataDeap, command: dict) -> Tuple[str, bool] | None:
+        def settings(ga_data: GADataDeap, _command, _broadcast, send_to_client):
+            send_to_client(get_settings(ga_data))
+
+        def set_setting(ga_data: GADataDeap, command: dict, broadcast, _send_to_client) :
             update = ga_data.set_settings(command)
             if update:
-                return (settings(ga_data, {})[0], True)
-            return None
+                broadcast(get_settings(ga_data))
 
         server: GAServer[GADataDeap] = GAServer(
             self.host,
