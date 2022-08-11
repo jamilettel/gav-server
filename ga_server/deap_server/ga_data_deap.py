@@ -1,6 +1,6 @@
 from typing_extensions import Self
 from deap import algorithms, base, tools
-from typing import Any, List
+from typing import Any, List, Literal
 from ga_server.deap_server.deap_settings import DeapSetting
 
 def isnum(var):
@@ -41,6 +41,7 @@ class GADataDeap:
         self.settings = settings
         self.algorithm = algorithm
         self.individual_encoding = individual_encoding
+        self.working = False
         self.add_default_settings()
 
     def add_default_settings(self):
@@ -109,6 +110,7 @@ class GADataDeap:
 
         return {
             "all_stats": self.records,
+            "status": self.get_status(),
             "population": popdata,
             "settings": self.get_settings(),
             "individual_encoding": self.individual_encoding,
@@ -148,3 +150,6 @@ class GADataDeap:
                         return False
                     break
         return True
+
+    def get_status(self) -> Literal['working', 'idle']:
+        return 'working' if self.working else 'idle'

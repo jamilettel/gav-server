@@ -18,7 +18,7 @@ class DeapSetting:
         get_value: Callable[[Any], str | int | float],
         handler: Callable[[Any, str | int | float], None],
         setting_range: None | List[float] | List[int] = None,
-    
+
         values: None | List[str] = None,
         min_increment: None | int | float = None,
     ):

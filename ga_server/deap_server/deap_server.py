@@ -141,6 +141,26 @@ class DEAPServer:
             if update:
                 broadcast(get_settings(ga_data))
 
+        def get_status_string(ga_data: GADataDeap) -> str:
+            return json_enc.encode({
+                "info": "status",
+                "status": ga_data.get_status()
+            })
+
+        def get_status(ga_data: GADataDeap, _command: dict, _broadcast, send_to_client):
+            send_to_client(get_status_string(ga_data))
+
+        def run_n_gen(ga_data: GADataDeap, command: dict, broadcast, send_to_client):
+            n_gen = command["generations"]
+            if type(n_gen) is not int or n_gen <= 0:
+                return
+            ga_data.working = True
+            broadcast(get_status_string(ga_data))
+            for _ in range(n_gen):
+                run_one_gen(ga_data, {}, broadcast, send_to_client)
+            ga_data.working = False
+            broadcast(get_status_string(ga_data))
+
         server: GAServer[GADataDeap] = GAServer(
             self.host,
             self.port,
@@ -150,6 +170,8 @@ class DEAPServer:
                 "run-one-gen": run_one_gen,
                 "settings": settings,
                 "set-setting": set_setting,
+                "get-status": get_status,
+                "run-n-gen": run_n_gen,
             },
             command_protocol = "generic",
             title=self.title
