@@ -2,7 +2,7 @@
 
 This server is used to compute and send information about a genetic algorithm. 
 An example of a client that can use this server can be found
-[here](https://www.github.com/jamilettel/gav-server).
+[here](https://www.github.com/jamilettel/gav-client).
 
 ## Starting the server
 
