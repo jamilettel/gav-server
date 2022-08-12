@@ -136,10 +136,20 @@ class DEAPServer:
         def settings(ga_data: GADataDeap, _command, _broadcast, send_to_client):
             send_to_client(get_settings(ga_data))
 
+        def get_settings_changelog(ga_data: GADataDeap):
+            return json_enc.encode({
+                "info": "settings-changelog",
+                "settings_changelog": ga_data.settings_changelog
+            })
+
+        def send_settings_changelog(ga_data: GADataDeap, _command, _broadcast, send_to_client):
+            send_to_client(get_settings_changelog(ga_data))
+
         def set_setting(ga_data: GADataDeap, command: dict, broadcast, _send_to_client) :
             update = ga_data.set_settings(command)
             if update:
                 broadcast(get_settings(ga_data))
+                broadcast(get_settings_changelog(ga_data))
 
         def get_status_string(ga_data: GADataDeap) -> str:
             return json_enc.encode({
@@ -172,6 +182,7 @@ class DEAPServer:
                 "set-setting": set_setting,
                 "get-status": get_status,
                 "run-n-gen": run_n_gen,
+                "settings-changelog": send_settings_changelog,
             },
             command_protocol = "generic",
             title=self.title

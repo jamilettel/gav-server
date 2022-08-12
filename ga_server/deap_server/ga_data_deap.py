@@ -42,7 +42,17 @@ class GADataDeap:
         self.algorithm = algorithm
         self.individual_encoding = individual_encoding
         self.working = False
+        self.settings_changelog = []
         self.add_default_settings()
+        self.add_settings_to_changelog()
+
+    def add_settings_to_changelog(self):
+        for setting in self.settings:
+            self.settings_changelog.append({
+                'generation': -1,
+                'setting': setting.name,
+                'value': setting.get_value(self),
+            })
 
     def add_default_settings(self):
         if len(self.mutate_settings) > 1:
@@ -114,6 +124,7 @@ class GADataDeap:
             "population": popdata,
             "settings": self.get_settings(),
             "individual_encoding": self.individual_encoding,
+            "settings_changelog": self.settings_changelog
         }
 
     def get_settings(self) -> dict:
@@ -123,22 +134,8 @@ class GADataDeap:
         return settings
 
     ### Settings handler
-    
-    def set_settings(self, command: dict) -> bool:
-        if "setting_name" not in command or "setting_value" not in command:
-            return False
-        setting_name = command["setting_name"]
-        setting_value = command["setting_value"]
-        if type(setting_name) is not str:
-            return False
-        for setting in self.settings:
-            if setting.name == setting_name:
-                setting.set_setting(self, setting_value)
-                return True
-        return False
 
     def set_settings(self, command: dict) -> bool:
-        print(command)
         if "settings" not in command or type(command["settings"]) is not dict:
             return False
         for setting_name, setting_value in command["settings"].items():
@@ -148,6 +145,11 @@ class GADataDeap:
                 if setting.name == setting_name:
                     if not setting.set_setting(self, setting_value):
                         return False
+                    self.settings_changelog.append({
+                        'generation': self.generation,
+                        'setting': setting.name,
+                        'value': setting.get_value(self),
+                    })
                     break
         return True
 
