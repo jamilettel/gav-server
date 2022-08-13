@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing_extensions import Self
 from deap import algorithms, base, tools
 from typing import Any, List, Literal
@@ -43,6 +44,7 @@ class GADataDeap:
         self.individual_encoding = individual_encoding
         self.working = False
         self.settings_changelog = []
+        self.populations = [deepcopy(self.pop)]
         self.add_default_settings()
         self.add_settings_to_changelog()
 
@@ -96,16 +98,17 @@ class GADataDeap:
 
     ### Utils
 
-    def get_pop_data(self) -> List[dict]:
+    def get_pop_data(population) -> List[dict]:
         return [{ 
             'Chromosome': ind.tolist(),
             'Fitness': sum(ind.fitness.wvalues) if len(ind.fitness.wvalues) > 0 else None
-        } for ind in self.pop]
+        } for ind in population]
 
     ### Actions
 
     def run_one_gen(self) -> dict:
         self.algorithm(self.pop, self.toolbox, **self.algorithm_kwargs, ngen=1, halloffame=self.hof, verbose=False)
+        self.populations.append(deepcopy(self.pop))
 
         record = self.stats.compile(self.pop)
         self.records.append(record)
@@ -116,12 +119,10 @@ class GADataDeap:
     ### Information
 
     def info(self) -> dict:
-        popdata = self.get_pop_data()
-
         return {
             "all_stats": self.records,
             "status": self.get_status(),
-            "population": popdata,
+            "populations": [GADataDeap.get_pop_data(pop) for pop in self.populations],
             "settings": self.get_settings(),
             "individual_encoding": self.individual_encoding,
             "settings_changelog": self.settings_changelog

@@ -1,4 +1,5 @@
 import json
+import traceback
 from typing import Any, Callable, Generic, Tuple, TypeVar
 from ga_server.client import GAClient
 from websock import WebSocketServer
@@ -166,9 +167,8 @@ class GAServer(Generic[T]):
                     print("CommandNotFound:", f'"{command}" from', ga_client)
 
                 return True
-        except Exception as e:
-            print(e)
-            pass
+        except Exception:
+            print(traceback.format_exc())
         return False
 
 

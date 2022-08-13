@@ -117,7 +117,7 @@ class DEAPServer:
 
         def run_one_gen(ga_data: GADataDeap, _command, broadcast, _send_to_client):
             gen_stats = ga_data.run_one_gen()
-            popdata = ga_data.get_pop_data()
+            popdata = GADataDeap.get_pop_data(ga_data.pop)
             broadcast(json_enc.encode({
                 "info": "one-gen",
                 "data": {
