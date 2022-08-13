@@ -7,6 +7,8 @@ import array
 
 import numpy
 from ga_server.deap_server.deap_server import DEAPServer
+from ga_server.deap_server.ga_data_deap import GADataDeap
+from ga_server.deap_server.deap_settings import DeapSetting
 from ga_server.deap_server.deap_settings_presets import get_cxpb_deap_setting, get_mutpb_deap_setting
 from ga_server.deap_server.individual_encoding import get_ind_enc_indexes
 
@@ -31,11 +33,25 @@ def general_stats_provider(pop, _toolbox: base.Toolbox, hof: tools.HallOfFame | 
         "Best found distance": str(hof.items[0].fitness.values[0]) if len(hof.items) > 0 else "N/A",
     }
 
+def get_tournsize(ga_data: GADataDeap):
+    return ga_data.additional_settings['tournsize']
+
+def set_tournsize(ga_data: GADataDeap, tournsize: int):
+    ga_data.additional_settings['tournsize'] = tournsize
+    ga_data.toolbox.register(f"select_Tournament", tools.selTournament, tournsize=tournsize)
+    if ga_data.select_value == 'Tournament':
+        ga_data.toolbox.register(f"select", ga_data.toolbox.select_Tournament)
+
 def main():
+    TOURNSIZE = 3
+
     server = DEAPServer(
         algorithm_kwargs={
             'cxpb': 0.7,
             'mutpb': 0.2
+        },
+        additional_settings={
+            'tournsize': TOURNSIZE,
         },
         algorithm=algorithms.eaSimple,
         title="Travelling Salesman Problem",
@@ -45,6 +61,14 @@ def main():
         settings=[
             get_mutpb_deap_setting(),
             get_cxpb_deap_setting(),
+            DeapSetting(
+                'number',
+                'Tournament size',
+                get_tournsize,
+                set_tournsize,
+                setting_range=[1,1000],
+                min_increment=1
+            )
         ],
         individual_encoding=get_ind_enc_indexes()
     )
@@ -64,7 +88,7 @@ def main():
 
     server.register_mutate("Shuffle Indexes", tools.mutShuffleIndexes, default=True, indpb=0.05)
     
-    server.register_select("Tournament", tools.selTournament, default=True, tournsize=3)
+    server.register_select("Tournament", tools.selTournament, default=True, tournsize=TOURNSIZE)
     server.register_select("Best", tools.selBest)
     server.register_select("Random", tools.selRandom)
     server.register_select("Random2", tools.selRandom)

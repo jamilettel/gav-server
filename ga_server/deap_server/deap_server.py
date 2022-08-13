@@ -13,7 +13,8 @@ class DEAPServer:
 
     def __init__(
         self,
-        algorithm_kwargs: dict,
+        algorithm_kwargs: dict={},
+        additional_settings: dict={},
         title="Generic Genetic Algorithm",
         initial_pop_size=100,
         stats = tools.Statistics(),
@@ -46,8 +47,9 @@ class DEAPServer:
         self.select_default = ""
         self.algorithm = algorithm
         self.settings = settings
-        
+
         self.individual_encoding = individual_encoding
+        self.additional_settings = additional_settings
 
     def register_mate(self, name: str, function, default=False, *args, **kwargs):
         self.toolbox.register(f"mate_{name}", function, *args, **kwargs)
@@ -66,7 +68,7 @@ class DEAPServer:
     def register_select(self, name: str, function, default=False, *args, **kwargs):
         self.toolbox.register(f"select_{name}", function, *args, **kwargs)
         self.select_settings.append(name)
-        if default:
+        if default or getattr(self.toolbox, "select") is None:
             self.select_default = name
             self.toolbox.register("select", getattr(self.toolbox, f"select_{name}"))
 
@@ -76,6 +78,7 @@ class DEAPServer:
             pop=self.toolbox.population(n=self.initial_pop_size),
             toolbox=deepcopy(self.toolbox),
             algorithm_kwargs=deepcopy(self.algorithm_kwargs),
+            additional_settings=deepcopy(self.additional_settings),
             stats=deepcopy(self.stats),
             mate_settings=self.mate_settings,
             mutate_settings=self.mutate_settings,

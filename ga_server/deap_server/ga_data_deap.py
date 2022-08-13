@@ -14,6 +14,7 @@ class GADataDeap:
         pop,
         toolbox: base.Toolbox,
         algorithm_kwargs: dict,
+        additional_settings: dict,
         stats: tools.Statistics,
         mate_settings: List[str],
         mutate_settings: List[str],
@@ -29,6 +30,7 @@ class GADataDeap:
         self.pop = pop
         self.toolbox = toolbox
         self.algorithm_kwargs = algorithm_kwargs
+        self.additional_settings = additional_settings
         self.stats = stats
         self.hof = hof
         self.generation = 0
