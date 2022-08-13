@@ -1,8 +1,9 @@
 
 from copy import deepcopy
 import json
-from typing import Any, Dict, List, Tuple, Callable
-from deap import base, tools, algorithms
+from typing import Dict, List, Tuple, Callable
+from deap import base, tools, algorithms, creator
+from ga_server.deap_server.IndividualData import IndividualData
 from ga_server.deap_server.deap_settings import DeapSetting
 from ga_server.deap_server.individual_encoding import get_ind_enc_indexes
 from ga_server.gas import GAServer
@@ -22,7 +23,7 @@ class DEAPServer:
         halloffame = tools.HallOfFame(1),
         host: str = "localhost",
         port: int = 8080,
-        general_stats_provider: Callable[[Any, base.Toolbox, tools.HallOfFame], Dict] | None = None,
+        general_stats_provider: Callable[[GADataDeap], Dict] | None = None,
         algorithm = algorithms.eaSimple,
         settings: List[DeapSetting] = [],
         individual_encoding: dict[str,str] = get_ind_enc_indexes(),
@@ -50,6 +51,13 @@ class DEAPServer:
 
         self.individual_encoding = individual_encoding
         self.additional_settings = additional_settings
+
+    def create(
+        name,
+        base,
+        **kwargs
+    ):
+        creator.create(name, base, **kwargs, visualization_data=IndividualData)
 
     def register_mate(self, name: str, function, default=False, *args, **kwargs):
         self.toolbox.register(f"mate_{name}", function, *args, **kwargs)
@@ -97,9 +105,7 @@ class DEAPServer:
 
         def get_general_stats(ga_data: GADataDeap) -> Dict:
             general_stats = self.general_stats_provider(
-                ga_data.pop, 
-                ga_data.toolbox,
-                ga_data.hof
+                ga_data
             ) if self.general_stats_provider != None else {}
             return {
                 **{

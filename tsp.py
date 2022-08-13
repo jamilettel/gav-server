@@ -13,7 +13,6 @@ from ga_server.deap_server.deap_settings_presets import get_cxpb_deap_setting, g
 from ga_server.deap_server.individual_encoding import get_ind_enc_indexes
 
 
-
 with open("tsp.json", "r") as tsp_data:
     tsp = json.load(tsp_data)
 
@@ -27,10 +26,10 @@ def evalTSP(individual):
     return distance,
 
 
-def general_stats_provider(pop, _toolbox: base.Toolbox, hof: tools.HallOfFame | None) -> Dict:
+def general_stats_provider(ga_data: GADataDeap) -> Dict:
     return {
         "Optimal distance": str(tsp["OptDistance"]),
-        "Best found distance": str(hof.items[0].fitness.values[0]) if len(hof.items) > 0 else "N/A",
+        "Best found distance": str(ga_data.hof.items[0].fitness.values[0]) if len(ga_data.hof.items) > 0 else "N/A",
     }
 
 def get_tournsize(ga_data: GADataDeap):
@@ -66,7 +65,7 @@ def main():
                 'Tournament size',
                 get_tournsize,
                 set_tournsize,
-                setting_range=[1,1000],
+                setting_range=[1, 300],
                 min_increment=1
             )
         ],
