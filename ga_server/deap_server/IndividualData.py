@@ -27,7 +27,7 @@ class IndividualData:
 
     def __init__(self):
         self._set_new_id()
-        self.age = -1
+        self.age = 0
         self.parent1_id: int = -1
         self.parent2_id: int = -1
         self.mutated_from = -1
