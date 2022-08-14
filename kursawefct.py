@@ -67,7 +67,7 @@ def main():
     )
 
     creator.create("FitnessMin", base.Fitness, weights=(-1.0, -1.0))
-    creator.create("Individual", array.array, typecode='d', fitness=creator.FitnessMin)
+    DEAPServer.create("Individual", array.array, typecode='d', fitness=creator.FitnessMin)
 
     # Attribute generator
     server.toolbox.register("attr_float", random.uniform, -5, 5)
@@ -82,8 +82,8 @@ def main():
     server.register_mutate("mutGaussian", tools.mutGaussian, default=True, mu=0, sigma=3, indpb=0.3)
     server.register_select("selNSGA2", tools.selNSGA2, default=True)
 
-    server.toolbox.decorate("mate", checkBounds(-5, 5))
-    server.toolbox.decorate("mutate", checkBounds(-5, 5)) 
+    server.decorate("mate", checkBounds(-5, 5))
+    server.decorate("mutate", checkBounds(-5, 5)) 
 
 
     server.stats = tools.Statistics(lambda ind: ind.fitness)

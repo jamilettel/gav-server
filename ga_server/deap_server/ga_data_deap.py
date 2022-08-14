@@ -2,6 +2,7 @@ from copy import deepcopy
 from typing_extensions import Self
 from deap import algorithms, base, tools
 from typing import Any, List, Literal
+from .IndividualData import IndividualData
 from ga_server.deap_server.deap_settings import DeapSetting
 
 def isnum(var):
@@ -25,6 +26,7 @@ class GADataDeap:
         hof: tools.HallOfFame,
         settings: List[DeapSetting],
         individual_encoding: dict[str, str],
+        decorators: dict[str, list],
         algorithm = algorithms.eaSimple,
     ):
         self.pop = pop
@@ -47,6 +49,7 @@ class GADataDeap:
         self.working = False
         self.settings_changelog = []
         self.populations = [deepcopy(self.pop)]
+        self.decorators = decorators
         self.add_default_settings()
         self.add_settings_to_changelog()
 
@@ -88,27 +91,43 @@ class GADataDeap:
 
     def upd_mate(ga_data: Self, setting_value):
         ga_data.mate_value = setting_value
+        ga_data.toolbox.unregister("mate")
         ga_data.toolbox.register("mate", getattr(ga_data.toolbox, f"mate_{setting_value}"))
+        if "mate" in ga_data.decorators:
+            for decorator in ga_data.decorators["mate"]:
+                ga_data.toolbox.decorate("mate", decorator)
 
     def upd_mutate(ga_data: Self, setting_value) -> bool:
         ga_data.mutate_value = setting_value
+        ga_data.toolbox.unregister("mutate")
         ga_data.toolbox.register("mutate", getattr(ga_data.toolbox, f"mutate_{setting_value}"))
+        if "mutate" in ga_data.decorators:
+            for decorator in ga_data.decorators["mutate"]:
+                ga_data.toolbox.decorate("mutate", decorator)
 
     def upd_select(ga_data: Self, setting_value) -> bool:
         ga_data.select_value = setting_value
+        ga_data.toolbox.unregister("select")
         ga_data.toolbox.register("select", getattr(ga_data.toolbox, f"select_{setting_value}"))
+        if "select" in ga_data.decorators:
+            for decorator in ga_data.decorators["select"]:
+                ga_data.toolbox.decorate("select", decorator)
 
     ### Utils
 
     def get_pop_data(population) -> List[dict]:
-        return [{ 
-            'Chromosome': ind.tolist(),
-            'Fitness': sum(ind.fitness.wvalues) if len(ind.fitness.wvalues) > 0 else None
+        return [{
+            "id": None,
+            "chromosome": ind.tolist(),
+            "fitness": sum(ind.fitness.wvalues) if len(ind.fitness.wvalues) > 0 else None,
+            **ind.visualization_data.to_dict()
         } for ind in population]
 
     ### Actions
 
     def run_one_gen(self) -> dict:
+        for ind in self.pop:
+            ind.visualization_data.age += 1
         self.algorithm(self.pop, self.toolbox, **self.algorithm_kwargs, ngen=1, halloffame=self.hof, verbose=False)
         self.populations.append(deepcopy(self.pop))
 

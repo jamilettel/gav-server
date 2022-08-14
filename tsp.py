@@ -39,7 +39,7 @@ def set_tournsize(ga_data: GADataDeap, tournsize: int):
     ga_data.additional_settings['tournsize'] = tournsize
     ga_data.toolbox.register(f"select_Tournament", tools.selTournament, tournsize=tournsize)
     if ga_data.select_value == 'Tournament':
-        ga_data.toolbox.register(f"select", ga_data.toolbox.select_Tournament)
+        GADataDeap.upd_select(ga_data, ga_data.select_value)
 
 def main():
     TOURNSIZE = 3
@@ -73,7 +73,7 @@ def main():
     )
 
     creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
-    creator.create("Individual", array.array, typecode='i', fitness=creator.FitnessMin)
+    DEAPServer.create("Individual", array.array, typecode='i', fitness=creator.FitnessMin)
 
     server.toolbox.register("indices", random.sample, range(IND_SIZE), IND_SIZE)
 

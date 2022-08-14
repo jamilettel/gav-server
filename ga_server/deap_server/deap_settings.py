@@ -42,8 +42,8 @@ class DeapSetting:
 
     def get_setting(self, ga_data):
         setting = {
-            'type': self.type,
-            'value': self.get_value(ga_data)
+            "type": self.type,
+            "value": self.get_value(ga_data)
         }
         if self.type == 'string' and self.values is not None:
             setting['values'] = self.values

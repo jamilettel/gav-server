@@ -51,6 +51,7 @@ class DEAPServer:
 
         self.individual_encoding = individual_encoding
         self.additional_settings = additional_settings
+        self.decorators: dict[str, list] = {}
 
     def create(
         name,
@@ -59,25 +60,38 @@ class DEAPServer:
     ):
         creator.create(name, base, **kwargs, visualization_data=IndividualData)
 
+    def decorate(self, alias: str, *decorators):
+        self.toolbox.decorate(alias, *decorators)
+        if alias in self.decorators:
+            self.decorators[alias] += list(decorators)
+        else:
+            self.decorators[alias] = list(decorators)
+
     def register_mate(self, name: str, function, default=False, *args, **kwargs):
         self.toolbox.register(f"mate_{name}", function, *args, **kwargs)
         self.mate_settings.append(name)
-        if default:
+        if default or hasattr(self.toolbox, "mate") == False:
             self.mate_default = name
+            if hasattr(self.toolbox, "mate"):
+                self.toolbox.unregister("mate")
             self.toolbox.register("mate", getattr(self.toolbox, f"mate_{name}"))
 
     def register_mutate(self, name: str, function, default=False, *args, **kwargs):
         self.toolbox.register(f"mutate_{name}", function, *args, **kwargs)
         self.mutate_settings.append(name)
-        if default:
+        if default or hasattr(self.toolbox, "mutate") == False:
             self.mutate_default = name
+            if hasattr(self.toolbox, "mutate"):
+                self.toolbox.unregister("mutate")
             self.toolbox.register("mutate", getattr(self.toolbox, f"mutate_{name}"))
 
     def register_select(self, name: str, function, default=False, *args, **kwargs):
         self.toolbox.register(f"select_{name}", function, *args, **kwargs)
         self.select_settings.append(name)
-        if default or getattr(self.toolbox, "select") is None:
+        if default or hasattr(self.toolbox, "select") == False:
             self.select_default = name
+            if hasattr(self.toolbox, "select"):
+                self.toolbox.unregister("select")
             self.toolbox.register("select", getattr(self.toolbox, f"select_{name}"))
 
 
@@ -98,6 +112,7 @@ class DEAPServer:
             algorithm=deepcopy(self.algorithm),
             settings=deepcopy(self.settings),
             individual_encoding=deepcopy(self.individual_encoding),
+            decorators=self.decorators
         )
 
     def run(self):
@@ -179,6 +194,9 @@ class DEAPServer:
                 run_one_gen(ga_data, {}, broadcast, send_to_client)
             ga_data.working = False
             broadcast(get_status_string(ga_data))
+
+        self.decorate("mutate", IndividualData.mutate_decorator)
+        self.decorate("mate", IndividualData.mate_decorator)
 
         server: GAServer[GADataDeap] = GAServer(
             self.host,
