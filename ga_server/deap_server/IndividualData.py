@@ -27,21 +27,21 @@ class IndividualData:
 
     def __init__(self):
         self._set_new_id()
-        self.age = 0
-        self.parent1_id: int | None = None
-        self.parent2_id: int | None = None
-        self.mutated_from = False
+        self.age = -1
+        self.parent1_id: int = -1
+        self.parent2_id: int = -1
+        self.mutated_from = -1
 
     def set_as_mutated(self, mutated_from: int):
         self._set_new_id()
         self.mutated_from = mutated_from
         self.age = 0
-        self.parent1_id = None
-        self.parent2_id = None
+        self.parent1_id = -1
+        self.parent2_id = -1
 
     def set_parents(self, parent1_id, parent2_id):
         self._set_new_id()
-        self.mutated_from = None
+        self.mutated_from = -1
         self.age = 0
         self.parent1_id = parent1_id
         self.parent2_id = parent2_id
