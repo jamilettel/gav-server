@@ -47,7 +47,9 @@ def main():
     server = DEAPServer(
         algorithm_kwargs={
             'cxpb': 0.7,
-            'mutpb': 0.2
+            'mutpb': 0.2,
+            'ngen': 1,
+            'verbose': False
         },
         additional_settings={
             'tournsize': TOURNSIZE,

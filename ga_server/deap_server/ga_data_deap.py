@@ -128,7 +128,7 @@ class GADataDeap:
     def run_one_gen(self) -> dict:
         for ind in self.pop:
             ind.visualization_data.age += 1
-        self.algorithm(self.pop, self.toolbox, **self.algorithm_kwargs, ngen=1, halloffame=self.hof, verbose=False)
+        self.algorithm(self.pop, self.toolbox, **self.algorithm_kwargs, halloffame=self.hof)
         self.populations.append(deepcopy(self.pop))
 
         record = self.stats.compile(self.pop)

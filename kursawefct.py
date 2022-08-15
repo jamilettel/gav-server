@@ -51,7 +51,9 @@ def main():
             'mu': MU,
             'lambda_': LAMBDA,
             'cxpb': 0.5,
-            'mutpb': 0.2
+            'mutpb': 0.2,
+            'ngen': 1,
+            'verbose': False
         },
         algorithm=algorithms.eaMuPlusLambda,
         title="Kursawe Benchmark",
