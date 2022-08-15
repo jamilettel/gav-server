@@ -16,7 +16,7 @@ class IndividualData:
     def mutate_decorator(func):
         def wrapper(*args, **kwargs):
             individual, = func(deepcopy(args[0]), **kwargs)
-            individual.visualization_data.set_as_mutated(args[0].visualization_data.id)
+            individual.visualization_data.set_as_mutated(args[0].visualization_data.id, args[0].tolist())
             return individual,
         return wrapper
 
@@ -31,18 +31,23 @@ class IndividualData:
         self.parent1_id: int = -1
         self.parent2_id: int = -1
         self.mutated_from = -1
+        self.before_mutation: None | list[int] = None
 
-    def set_as_mutated(self, mutated_from: int):
-        self._set_new_id()
+    def set_as_mutated(self, mutated_from: int, before_mutation: list[int] | None):
+        if self.age > 0:
+            self._set_new_id()
+            self.age = 0
+            self.parent1_id = -1
+            self.parent2_id = -1
+        else:
+            self.before_mutation = before_mutation
         self.mutated_from = mutated_from
-        self.age = 0
-        self.parent1_id = -1
-        self.parent2_id = -1
 
     def set_parents(self, parent1_id, parent2_id):
-        self._set_new_id()
-        self.mutated_from = -1
-        self.age = 0
+        if self.age > 0:
+            self._set_new_id()
+            self.mutated_from = -1
+            self.age = 0
         self.parent1_id = parent1_id
         self.parent2_id = parent2_id
 
@@ -56,4 +61,5 @@ class IndividualData:
             'mutated_from': self.mutated_from,
             'parent1_id': self.parent1_id,
             'parent2_id': self.parent2_id,
+            'before_mutation': self.before_mutation,
         }
