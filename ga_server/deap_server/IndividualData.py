@@ -39,6 +39,7 @@ class IndividualData:
             self.age = 0
             self.parent1_id = -1
             self.parent2_id = -1
+            self.before_mutation = None
         else:
             self.before_mutation = before_mutation
         self.mutated_from = mutated_from
@@ -48,6 +49,7 @@ class IndividualData:
             self._set_new_id()
             self.mutated_from = -1
             self.age = 0
+            self.before_mutation = None
         self.parent1_id = parent1_id
         self.parent2_id = parent2_id
 
