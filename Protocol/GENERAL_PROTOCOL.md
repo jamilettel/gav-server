@@ -122,4 +122,4 @@ const example: Command = {
 
 Here are the command protocols currently present:
 
-- [`Generic`](GENERIC.md)
+- [`Generic`](./GENERIC_PROTOCOL.md)
