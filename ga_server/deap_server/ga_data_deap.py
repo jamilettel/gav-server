@@ -126,8 +126,11 @@ class GADataDeap:
     ### Actions
 
     def run_one_gen(self) -> dict:
+        aged_ids = []
         for ind in self.pop:
-            ind.visualization_data.age += 1
+            if ind.visualization_data.id not in aged_ids:
+                ind.visualization_data.age += 1
+                aged_ids.append(ind.visualization_data.id)
         self.algorithm(self.pop, self.toolbox, **self.algorithm_kwargs, halloffame=self.hof)
         self.populations.append(deepcopy(self.pop))
 
