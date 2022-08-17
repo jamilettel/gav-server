@@ -4,7 +4,7 @@ class GAClient():
     messages: int = 0
     session_name: str | None = None
 
-    def __init__(self, ws: socket):
+    def __init__(self, ws: dict):
         self.ws = ws
         pass
 

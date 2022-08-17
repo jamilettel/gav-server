@@ -2,9 +2,8 @@ import json
 import traceback
 from typing import Any, Callable, Generic, Tuple, TypeVar
 from ga_server.client import GAClient
-from websock import WebSocketServer
 from threading import Lock
-from socket import socket
+from websocket_server import WebsocketServer
 
 T = TypeVar('T')
 
@@ -34,13 +33,13 @@ class GAServer(Generic[T]):
         self.commands = commands
         self.command_protocol = command_protocol
         self.title = title
-        self.server = WebSocketServer(
-            self.host,
-            self.port,
-            on_data_receive=self.on_message,
-            on_connection_open=self.on_connect,
-            on_connection_close=self.on_close
-        )
+        self.server = WebsocketServer(host=self.host, port=self.port)
+        self.server.set_fn_new_client(self.on_connect)
+        self.server.set_fn_message_received(self.on_message)
+        self.server.set_fn_client_left(self.on_close)
+            # on_data_receive=self.on_message,
+            # on_connection_open=self.on_connect,
+            # on_connection_close=self.on_close
 
 
     def send_to_session(self, session: str, message: str):
@@ -48,7 +47,7 @@ class GAServer(Generic[T]):
         try:
             for _, client in self.connections.items():
                 if client.session_name == session:
-                    self.server.send(client.ws, message)
+                    self.server.send_message(client.ws, message)
         finally:
             self.connections_mutex.release()
 
@@ -70,7 +69,7 @@ class GAServer(Generic[T]):
                 if name not in self.sessions:
                     self.sessions[name] = self.ga_data_provider()
                     for _, client in self.connections.items():
-                        self.server.send(client.ws, self.json_enc.encode(self.get_session_list()))
+                        self.server.send_message(client.ws, self.json_enc.encode(self.get_session_list()))
                 ga_client.session_name = name
             finally:
                 self.sessions_mutex.release()
@@ -81,12 +80,12 @@ class GAServer(Generic[T]):
     def send_session_list(self, ga_client: GAClient):
         self.sessions_mutex.acquire(1)
         try:
-            self.server.send(ga_client.ws, self.json_enc.encode(self.get_session_list()))
+            self.server.send_message(ga_client.ws, self.json_enc.encode(self.get_session_list()))
         finally:
             self.sessions_mutex.release()
 
     def session_info(self, ga_client: GAClient):
-        self.server.send(ga_client.ws, self.json_enc.encode({
+        self.server.send_message(ga_client.ws, self.json_enc.encode({
             "info": "session",
             "session": ga_client.session_name,
         }))
@@ -106,13 +105,13 @@ class GAServer(Generic[T]):
                         self.session_info(c)
                 del self.sessions[name]
                 for _, client in self.connections.items():
-                    self.server.send(client.ws, self.json_enc.encode(self.get_session_list()))
+                    self.server.send_message(client.ws, self.json_enc.encode(self.get_session_list()))
         finally:
             self.connections_mutex.release()
             self.sessions_mutex.release()
 
     def session_describe(self, ga_client: GAClient):
-        self.server.send(ga_client.ws, self.json_enc.encode({
+        self.server.send_message(ga_client.ws, self.json_enc.encode({
             "info": "session_describe",
             "title": self.title,
             "command_protocol": self.command_protocol
@@ -161,7 +160,7 @@ class GAServer(Generic[T]):
                         session_data, 
                         data, 
                         lambda msg: self.send_to_session(session, msg), 
-                        lambda msg: self.server.send(ga_client.ws, msg)
+                        lambda msg: self.server.send_message(ga_client.ws, msg)
                     )
                 else:
                     print("CommandNotFound:", f'"{command}" from', ga_client)
@@ -183,26 +182,26 @@ class GAServer(Generic[T]):
         except json.JSONDecodeError:
             print("InvalidJSON:", f'"{message}" from', client)
 
-    def on_connect(self, client: socket):
+    def on_connect(self, client: dict, server: WebsocketServer):
         self.connections_mutex.acquire(1)
         try:
-            self.connections[client.getpeername()] = GAClient(client)
+            self.connections[client['address']] = GAClient(client)
         finally:
             self.connections_mutex.release()
-        print(f"Connected: {client.getpeername()}")
+        print(f"Connected: {client['address']}")
 
-    def on_close(self, client: socket):
+    def on_close(self, client: dict, _server: WebsocketServer):
         self.connections_mutex.acquire(1)
         try:
-            del self.connections[client.getpeername()]
+            del self.connections[client['address']]
         finally:
             self.connections_mutex.release()
-        print(f"Disconnected: {client.getpeername()}")
+        print(f"Disconnected: {client['address']}")
 
-    def on_message(self, client: socket, data: str):
+    def on_message(self, client: dict, _server: WebsocketServer, data: str):
         self.connections_mutex.acquire(1)
         try:
-            ga_client = self.connections[client.getpeername()]
+            ga_client = self.connections[client['address']]
         finally:
             self.connections_mutex.release()
 
@@ -211,8 +210,8 @@ class GAServer(Generic[T]):
     def run(self):
         try:
             print(f"Server starting on {self.host}:{self.port}")
-            self.server.serve_forever()
+            self.server.run_forever()
         except KeyboardInterrupt:
             pass
         finally:
-            self.server.close_server()
+            self.server.server_close()
