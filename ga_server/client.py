@@ -9,5 +9,5 @@ class GAClient():
         pass
 
     def __str__(self):
-        return f"[Client {self.ws.getpeername()}, messages: {self.messages}]"
+        return f""
 

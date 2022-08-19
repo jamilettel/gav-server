@@ -143,7 +143,7 @@ class GAServer(Generic[T]):
         try:
             if "command" in data:
                 if ga_client.session_name == None:
-                    print("NoSession:", ga_client.ws.getpeername())
+                    print("NoSession:", ga_client.ws.address)
                     return True
 
                 session = ga_client.session_name
